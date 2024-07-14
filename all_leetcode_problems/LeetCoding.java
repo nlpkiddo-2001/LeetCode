@@ -19,13 +19,241 @@ class ListNode {
     }
 }
 
+class TreeNode {
+    int val;
+    TreeNode left;
+    TreeNode right;
+
+    TreeNode() {
+    }
+
+    TreeNode(int val) {
+        this.val = val;
+    }
+
+    TreeNode(int val, TreeNode left, TreeNode right) {
+        this.val = val;
+        this.left = left;
+        this.right = right;
+    }
+}
+
 public class LeetCoding {
     public static void main(String[] args) {
-        int numBottles = 10;
-        int numExchange = 3;
-        System.out.println(maxBottlesDrunk(numBottles, numExchange));
+        TreeNode root = new TreeNode(3);
+        root.left = new TreeNode(9);
+        root.right = new TreeNode(20);
+        root.right.left = new TreeNode(15);
+        root.right.right = new TreeNode(7);
+
+        List<List<Integer>> answer = levelOrder(root);
+        System.out.println(answer);
+
 
     }
+
+
+    public static List<List<Integer>> levelOrder(TreeNode root) {
+        List<List<Integer>> result = new ArrayList<>();
+        levelOrderHelper(root, 0, result);
+        return result;
+    }
+
+    private static void levelOrderHelper(TreeNode node, int level, List<List<Integer>> result) {
+        if (node == null) {
+            return;
+        }
+
+        if (level >= result.size()) {
+            result.add(new ArrayList<>());
+        }
+
+        result.get(level).add(node.val);
+
+        levelOrderHelper(node.left, level + 1, result);
+        levelOrderHelper(node.right, level + 1, result);
+    }
+
+    public static List<Integer> survivedRobotsHealths(int[] positions, int[] healths, String directions) {
+        int n = positions.length;
+        Integer[] indices = new Integer[n];
+        List<Integer> result = new ArrayList<>();
+        Stack<Integer> stack = new Stack<>();
+
+        for (int index = 0; index < n; ++index) {
+            indices[index] = index;
+        }
+
+        Arrays.sort(indices, Comparator.comparingInt(lhs -> positions[lhs]));
+
+        for (int currentIndex : indices) {
+            // Add right-moving robots to the stack
+            if (directions.charAt(currentIndex) == 'R') {
+                stack.push(currentIndex);
+            } else {
+                while (!stack.isEmpty() && healths[currentIndex] > 0) {
+                    // Pop the top robot from the stack for collision check
+                    int topIndex = stack.pop();
+
+                    // Top robot survives, current robot is destroyed
+                    if (healths[topIndex] > healths[currentIndex]) {
+                        healths[topIndex] -= 1;
+                        healths[currentIndex] = 0;
+                        stack.push(topIndex);
+                    } else if (healths[topIndex] < healths[currentIndex]) {
+                        // Current robot survives, top robot is destroyed
+                        healths[currentIndex] -= 1;
+                        healths[topIndex] = 0;
+                    } else {
+                        // Both robots are destroyed
+                        healths[currentIndex] = 0;
+                        healths[topIndex] = 0;
+                    }
+                }
+            }
+        }
+
+        // Collect surviving robots
+        for (int index = 0; index < n; ++index) {
+            if (healths[index] > 0) {
+                result.add(healths[index]);
+            }
+        }
+        return result;
+    }
+
+    public static int maximumGain(String s, int x, int y) {
+        String top, bot;
+        int res = 0;
+        int topScore, botScore;
+        if (y > x) {
+            top = "ba";
+            bot = "ab";
+            topScore = y;
+            botScore = x;
+        } else {
+            top = "ab";
+            bot = "ba";
+            topScore = x;
+            botScore = y;
+        }
+
+        Stack<Character> stack1 = new Stack<>();
+        for (char ch : s.toCharArray()) {
+            if (ch == top.charAt(1) && !stack1.isEmpty() && stack1.peek() == top.charAt(0)) {
+                res += topScore;
+                stack1.pop();
+            } else {
+                stack1.push(ch);
+            }
+        }
+
+
+        String stackString = "";
+        for (int i = 0; i < stack1.size(); i++) {
+            char c = stack1.peek();
+            stackString = stackString + c;
+        }
+
+        Stack<Character> stack2 = new Stack<>();
+        for (char ch : stackString.toCharArray()) {
+            if (ch == bot.charAt(1) && !stack2.isEmpty() && stack2.peek() == bot.charAt(0)) {
+                res += botScore;
+                stack2.pop();
+            } else {
+                stack2.push(ch);
+            }
+        }
+
+        return res;
+    }
+
+    public static String reverseParenthesesBetweenEachPairOfParantheses(String s) {
+        Stack<Integer> stack = new Stack<>();
+        char[] arr = s.toCharArray();
+
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] == '(') {
+                stack.push(i);
+            } else if (arr[i] == ')') {
+                int j = stack.pop();
+                reverse(arr, j + 1, i - 1);
+            }
+        }
+        StringBuilder result = new StringBuilder();
+        for (char c : arr) {
+            if (c != '(' && c != ')') {
+                result.append(c);
+            }
+        }
+
+        return result.toString();
+    }
+
+    public static double averageWaitingTime(int[][] customers) {
+        int n = customers.length;
+        double time_waiting = customers[0][1];
+        int finished_prev = customers[0][0] + customers[0][1];
+
+        for (int customer_ind = 1; customer_ind < n; ++customer_ind) {
+            int[] times = customers[customer_ind];
+            int arrive = times[0];
+
+            int start_cook = Math.max(arrive, finished_prev);
+            int end_time = start_cook + times[1];
+            finished_prev = end_time;
+            time_waiting += end_time - arrive;
+        }
+
+        return time_waiting / n;
+    }
+
+    public static int findTheWinner(int n, int k) {
+        /**
+         * Input: n = 5, k = 2
+         * Output: 3
+         * Explanation: Here are the steps of the game:
+         * 1) Start at friend 1.
+         * 2) Count 2 friends clockwise, which are friends 1 and 2.
+         * 3) Friend 2 leaves the circle. Next start is friend 3.
+         * 4) Count 2 friends clockwise, which are friends 3 and 4.
+         * 5) Friend 4 leaves the circle. Next start is friend 5.
+         * 6) Count 2 friends clockwise, which are friends 5 and 1.
+         * 7) Friend 1 leaves the circle. Next start is friend 3.
+         * 8) Count 2 friends clockwise, which are friends 3 and 5.
+         * 9) Friend 5 leaves the circle. Only friend 3 is left, so they are the winner.
+         * 1   2   3   4    5
+         * store the elements in the queue [1, 2, 3, 4, 5]
+         * store the elements in the list [1, 2, 3, 4, 5]
+         * while (queue length is == 1) -> formula for circular index = (index + k - 1) % len(friends)
+         *
+         */
+        List<Integer> friends = new ArrayList<>();
+
+        for (int i = 1; i <= n; i++) {
+            friends.add(i);
+        }
+
+        int index = 0;
+
+        while (friends.size() > 1) {
+            index = (index + k - 1) % friends.size();
+            friends.remove(index);
+        }
+
+        return friends.get(0);
+
+
+    }
+//    private static void reverse(char[] arr, int left, int right) {
+//        while (left < right) {
+//            char temp = arr[left];
+//            arr[left] = arr[right];
+//            arr[right] = temp;
+//            left++;
+//            right--;
+//        }
+//    }
 
     public static ListNode removeNthFromEnd(ListNode head, int n) {
         ListNode res = new ListNode(0, head);
@@ -502,6 +730,38 @@ public class LeetCoding {
             }
             System.out.println();
         }
+    }
+
+    private static void reverse(char[] arr, int left, int right) {
+        while (left < right) {
+            char temp = arr[left];
+            arr[left] = arr[right];
+            arr[right] = temp;
+            left++;
+            right--;
+        }
+    }
+
+    public String reverseParentheses(String s) {
+        Stack<Integer> stack = new Stack<>();
+        char[] arr = s.toCharArray();
+
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] == '(') {
+                stack.push(i);
+            } else if (arr[i] == ')') {
+                int j = stack.pop();
+                reverse(arr, j + 1, i - 1);
+            }
+        }
+        StringBuilder result = new StringBuilder();
+        for (char c : arr) {
+            if (c != '(' && c != ')') {
+                result.append(c);
+            }
+        }
+
+        return result.toString();
     }
 
     public List<Integer> findSubstringOptimal(String s, String[] words) {
