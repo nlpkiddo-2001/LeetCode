@@ -1,3 +1,6 @@
+from collections import Counter, defaultdict
+import math
+
 #1. two sum
 def twoSum_unsorted(arr, target):
     hash_map = {}
@@ -34,10 +37,11 @@ def longestSubString(text: str):
         while text[end] in seen:
             seen.remove(text[start])
             start += 1
-        seen.add(text[start])
+        seen.add(text[end])
         max_len = max(max_len, end-start + 1)
     return max_len
 
+# print(longestSubString("pwwkew"))
 #####################################################################################################################################################################################################################
 from typing import List
 #3 1.3 Merge Intervals Problem: Given a list of intervals, merge all overlapping intervals and return the result sorted by start time.
@@ -556,7 +560,105 @@ def threeSum(nums: List[int]):
     return res
 
 nums = [-1,0,1,2,-1,-4]
-print(threeSum(nums))
+# print(threeSum(nums))
+
+#####################################################################################################################################################################################################################
+"""
+Container With Most Water
+You are given an integer array heights where heights[i] represents the height of the ith bar
 
 
+You may choose any two bars to form a container. Return the maximum amount of water a container can store.
+"""
+
+def maxArea(heights: List[int]) -> int:
+    l , r = 0, len(heights) - 1
+    res = 0
+
+    while l < r:
+        area = min(heights[l], heights[r]) * (r - l)
+        res = max(res, area)
+        if heights[l] <= heights[r]:
+            l += 1
+        else:
+            r -= 1
+    return res
+
+height = [1,7,2,5,4,7,3,6]
+# print(maxArea(height))
+#####################################################################################################################################################################################################################
+"""
+Best Time to Buy and Sell Stock
+You are given an integer array prices where prices[i] is the price of NeetCoin on the ith day.
+
+You may choose a single day to buy one NeetCoin and choose a different day in the future to sell it.
+
+
+"""
+def maxProfit(prices: List[int]) -> int:
+    # brute force
+    # res = 0
+    # for i in range(len(prices)):
+    #     buy = prices[i]
+    #     for j in range(i + 1, len(prices)):
+    #         sell = prices[j]
+    #         res = max(res, sell - buy)
+    # return res
+
+    # two pointers
+    left, right = 0, 1
+    res = 0
+    while right < len(prices):
+        if prices[left] < prices[right]:
+            curr_profit = prices[right] - prices[left]
+            res = max(curr_profit, res)
+        else:
+            left = right
+        right += 1
+
+    return res
+
+prices = [10,1,5,6,7,1]
+# print(maxProfit(prices))
+#####################################################################################################################################################################################################################
+def longest_sub_string(strs: str) -> int:
+    res = 0
+    start = 0
+    seen = set()
+
+    for end in range(len(str)):
+        while strs[end] in seen:
+            seen.remove(strs[start])
+            start+=1
+        seen.add(strs[end])
+        res = max(res, end-start + 1)
+    return res
+
+#####################################################################################################################################################################################################################
+"""
+Longest Repeating Character Replacement
+You are given a string s consisting of only uppercase english characters and an integer k. You can choose up to k characters of the string and replace them with any other uppercase English character.
+
+After performing at most k replacements, return the length of the longest substring which contains only one distinct character.
+"""
+def characterReplacement(s: str, k: int) -> int:
+    count = {}
+    res = 0
+
+    l = 0
+
+    for r in range(len(s)):
+        count[s[r]] = 1 + count.get(s[r] , 0)
+
+        while (r - l + 1) - max(count.values()) > k:
+            count[s[l]] -= 1
+            l += 1
+        res = max( r - l + 1, res)
+
+    return res
+
+s = "AAABABB"
+k = 1
+
+print(characterReplacement(s, k))
 #####################################################################################################################################################################################################################
