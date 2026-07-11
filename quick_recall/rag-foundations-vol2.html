@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Retrieval Notebook — Chunking, Vector Databases, Query Processing</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']]
+  },
+  chtml: { scale: 1.05 }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<style>
+:root {
+  --paper: #F5F1E8;
+  --paper-2: #EFE9DA;
+  --paper-3: #E8E1CE;
+  --ink: #1C1917;
+  --ink-2: #3A3733;
+  --muted: #7A736A;
+  --rule: #D9D2C1;
+  --rule-strong: #B8AE97;
+  --accent: #2E5266;
+  --accent-2: #B8722E;
+  --accent-soft: rgba(46, 82, 102, 0.08);
+  --code-bg: #1C1917;
+  --code-ink: #E8E1CE;
+  --highlight-a: #B8722E;
+  --highlight-b: #6B8E4E;
+  --highlight-c: #8B4B6B;
+  --highlight-d: #2E5266;
+  --chunk-a: rgba(184, 114, 46, 0.22);
+  --chunk-b: rgba(107, 142, 78, 0.22);
+  --chunk-c: rgba(139, 75, 107, 0.22);
+  --chunk-d: rgba(46, 82, 102, 0.22);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 17px;
+  line-height: 1.7;
+  font-feature-settings: "kern", "liga", "onum";
+  -webkit-font-smoothing: antialiased;
+}
+
+.page { max-width: 780px; margin: 0 auto; padding: 4rem 2rem 8rem; }
+
+/* Hero */
+.hero { margin-bottom: 6rem; }
+
+.hero-eyebrow {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.hero-eyebrow::before {
+  content: "";
+  width: 32px;
+  height: 1px;
+  background: var(--rule-strong);
+}
+
+.hero-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+  font-variation-settings: "opsz" 144, "SOFT" 30;
+}
+.hero-title em {
+  font-style: italic;
+  color: var(--accent);
+  font-variation-settings: "opsz" 144, "SOFT" 100;
+}
+
+.hero-lede {
+  font-size: 1.15rem;
+  color: var(--ink-2);
+  max-width: 62ch;
+  margin-bottom: 3rem;
+}
+
+.volume-note {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+  display: inline-block;
+  margin-bottom: 2.5rem;
+  border-radius: 2px;
+}
+.volume-note strong { color: var(--ink); font-weight: 600; }
+
+/* --- Signature: chunking anatomy --- */
+.chunk-anatomy {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  padding: 2.25rem 2rem 1.75rem;
+  margin: 3rem -1rem;
+  border-radius: 2px;
+  position: relative;
+}
+.chunk-anatomy::before {
+  content: "The same passage, cut four ways";
+  position: absolute;
+  top: -0.6rem;
+  left: 1.75rem;
+  background: var(--paper);
+  padding: 0 0.75rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.chunk-example { margin: 1.25rem 0 1.75rem; }
+
+.chunk-example:last-child { margin-bottom: 0.5rem; }
+
+.chunk-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.chunk-label strong {
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.chunk-label .verdict {
+  font-family: "Source Serif 4", serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
+.chunk-passage {
+  font-family: "Source Serif 4", serif;
+  font-size: 0.94rem;
+  line-height: 1.75;
+  color: var(--ink-2);
+  padding: 0.4rem 0;
+}
+
+.chunk-passage .c-a { background: var(--chunk-a); padding: 0.05em 0.15em; border-radius: 1px; }
+.chunk-passage .c-b { background: var(--chunk-b); padding: 0.05em 0.15em; border-radius: 1px; }
+.chunk-passage .c-c { background: var(--chunk-c); padding: 0.05em 0.15em; border-radius: 1px; }
+.chunk-passage .c-d { background: var(--chunk-d); padding: 0.05em 0.15em; border-radius: 1px; }
+
+.chunk-passage .cut::before {
+  content: "|";
+  color: var(--accent-2);
+  font-weight: bold;
+  margin: 0 0.15em;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.parent-child-viz {
+  border: 1px solid var(--rule-strong);
+  padding: 0.85rem 1rem;
+  margin: 0.4rem 0;
+  background: rgba(46, 82, 102, 0.05);
+}
+.parent-child-viz .parent-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+.parent-child-viz .child {
+  border-left: 2px solid var(--accent-2);
+  padding-left: 0.6rem;
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+/* TOC */
+.toc {
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 2rem 0;
+  margin: 4rem 0 6rem;
+}
+.toc-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+.toc-list { list-style: none; display: grid; gap: 0.85rem; }
+.toc-item {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed var(--rule);
+}
+.toc-item:last-child { border-bottom: none; }
+.toc-num {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 8;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--accent);
+  font-size: 1.05rem;
+}
+.toc-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: 1.15rem;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.toc-title:hover { color: var(--accent-2); }
+.toc-note {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Chapter */
+.chapter { margin: 7rem 0 5rem; scroll-margin-top: 2rem; }
+.chapter-header { border-top: 3px solid var(--ink); padding-top: 2rem; margin-bottom: 3rem; }
+.chapter-num {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  margin-bottom: 1rem;
+}
+.chapter-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: clamp(2rem, 4.5vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  margin-bottom: 1.25rem;
+  font-variation-settings: "opsz" 144;
+}
+.chapter-title em { font-style: italic; color: var(--accent); }
+.chapter-summary { font-size: 1.05rem; color: var(--ink-2); max-width: 62ch; font-style: italic; }
+
+/* Section */
+.section { margin: 4rem 0; scroll-margin-top: 2rem; }
+h3.section-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: 1.6rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
+  color: var(--ink);
+  font-variation-settings: "opsz" 40;
+}
+.section-tag {
+  display: inline-block;
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.subsection { margin: 2.5rem 0; }
+h4.subsection-title {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--ink);
+  margin-bottom: 0.6rem;
+  font-variation-settings: "opsz" 20;
+}
+
+p { margin-bottom: 1.15rem; color: var(--ink-2); }
+p strong { color: var(--ink); font-weight: 600; }
+p em { font-style: italic; }
+a { color: var(--accent); text-underline-offset: 3px; }
+
+/* Boxes */
+.intuition {
+  border-left: 2px solid var(--accent-2);
+  padding: 0.4rem 0 0.4rem 1.25rem;
+  margin: 1.5rem 0;
+}
+.intuition-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  margin-bottom: 0.4rem;
+  display: block;
+}
+.intuition p { margin-bottom: 0; color: var(--ink-2); }
+
+.aside {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  padding: 1.25rem 1.5rem;
+  margin: 1.75rem 0;
+  font-size: 0.95rem;
+  border-radius: 2px;
+}
+.aside-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.aside p:last-child { margin-bottom: 0; }
+
+/* Math */
+.math-display {
+  padding: 1.5rem 1rem;
+  margin: 1.5rem 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+  overflow-x: auto;
+  font-size: 1.05rem;
+  background: var(--paper-2);
+}
+.math-caption {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  margin-top: -0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.88em;
+  background: var(--paper-3);
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-ink);
+  padding: 1.25rem;
+  border-radius: 3px;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+pre code { background: transparent; padding: 0; color: inherit; font-size: inherit; }
+
+ul, ol { margin: 0.75rem 0 1.5rem 1.5rem; color: var(--ink-2); }
+li { margin-bottom: 0.5rem; }
+li::marker { color: var(--muted); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.93rem;
+}
+th, td {
+  text-align: left;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+th {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--rule-strong);
+}
+td { color: var(--ink-2); }
+td code { font-size: 0.82rem; }
+
+.big-idea {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 144, "SOFT" 100;
+  font-style: italic;
+  font-size: 1.35rem;
+  line-height: 1.4;
+  color: var(--accent);
+  margin: 2.5rem 0;
+  padding: 0 0 0 1.5rem;
+  border-left: 2px solid var(--accent-2);
+  max-width: 60ch;
+}
+
+.divider {
+  text-align: center;
+  margin: 4rem 0;
+  color: var(--rule-strong);
+  font-family: "Fraunces", serif;
+  letter-spacing: 1rem;
+  font-size: 0.9rem;
+}
+
+.closing {
+  margin-top: 7rem;
+  padding-top: 3rem;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+  color: var(--muted);
+  font-family: "Inter", sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+.closing em { font-family: "Fraunces", serif; font-style: italic; letter-spacing: 0; color: var(--ink-2); font-size: 0.95rem; }
+
+/* HNSW mini-diagram used in Ch5 */
+.hnsw-diagram {
+  padding: 1.5rem 0.5rem;
+  margin: 2rem 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-2);
+  overflow-x: auto;
+}
+.hnsw-diagram svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+@media (max-width: 640px) {
+  .page { padding: 3rem 1.25rem 5rem; }
+  .chunk-anatomy { margin: 2rem -0.5rem; padding: 1.75rem 1.25rem 1.25rem; }
+  .toc-item { grid-template-columns: 1.5rem 1fr; }
+  .toc-note { display: none; }
+  body { font-size: 16.5px; }
+}
+</style>
+</head>
+<body>
+
+<main class="page">
+
+<!-- ======================================================= -->
+<!-- HERO                                                     -->
+<!-- ======================================================= -->
+
+<header class="hero">
+  <div class="hero-eyebrow">A study companion &middot; three more chapters</div>
+
+  <h1 class="hero-title">The pieces you retrieve, the place you retrieve from, the <em>question you ask</em>.</h1>
+
+  <div class="volume-note">
+    <strong>Volume II.</strong> Continues from the first notebook. If you have not read the chapters on
+    foundations, embeddings, and document processing, they lay the groundwork for everything here.
+  </div>
+
+  <p class="hero-lede">
+    In the first notebook we scored documents and turned text into vectors. In this one we get practical:
+    how do we cut documents into retrievable pieces, where do we store the billions of vectors that result,
+    and how do we make sense of the question a user actually asked. These three concepts &mdash; chunking,
+    vector databases, and query processing &mdash; are where most real systems win or lose.
+  </p>
+
+  <!-- Signature: chunking anatomy -->
+  <div class="chunk-anatomy">
+
+    <p style="font-size: 0.93rem; color: var(--muted); font-style: italic; margin-bottom: 1.75rem;">
+      Take one small passage of text. Four chunkers will cut it four different ways. The strategy determines
+      what the retriever can find. This is a preview of what Chapter Four is about.
+    </p>
+
+    <!-- Fixed-size -->
+    <div class="chunk-example">
+      <div class="chunk-label">
+        <strong>Fixed-size, 60 characters</strong>
+        <span class="verdict">— cuts words in half</span>
+      </div>
+      <div class="chunk-passage">
+        <span class="c-a">Photosynthesis converts sunlight into chemical energy. Pla</span><span class="c-b">nts absorb light through chlorophyll molecules in their le</span><span class="c-c">aves. Cellular respiration is the reverse process entirely</span><span class="c-d">. Mitochondria break down glucose to release cell energy.</span>
+      </div>
+    </div>
+
+    <!-- Recursive -->
+    <div class="chunk-example">
+      <div class="chunk-label">
+        <strong>Recursive (sentence-aware)</strong>
+        <span class="verdict">— respects punctuation</span>
+      </div>
+      <div class="chunk-passage">
+        <span class="c-a">Photosynthesis converts sunlight into chemical energy.</span> <span class="c-b">Plants absorb light through chlorophyll molecules in their leaves.</span> <span class="c-c">Cellular respiration is the reverse process entirely.</span> <span class="c-d">Mitochondria break down glucose to release cell energy.</span>
+      </div>
+    </div>
+
+    <!-- Semantic -->
+    <div class="chunk-example">
+      <div class="chunk-label">
+        <strong>Semantic</strong>
+        <span class="verdict">— finds topic changes</span>
+      </div>
+      <div class="chunk-passage">
+        <span class="c-a">Photosynthesis converts sunlight into chemical energy. Plants absorb light through chlorophyll molecules in their leaves.</span> <span class="c-c">Cellular respiration is the reverse process entirely. Mitochondria break down glucose to release cell energy.</span>
+      </div>
+    </div>
+
+    <!-- Parent-child -->
+    <div class="chunk-example">
+      <div class="chunk-label">
+        <strong>Parent-child</strong>
+        <span class="verdict">— retrieve small, return large</span>
+      </div>
+      <div class="parent-child-viz">
+        <div class="parent-label">PARENT (returned to LLM for context)</div>
+        <div class="chunk-passage" style="padding: 0;">
+          Photosynthesis converts sunlight into chemical energy. Plants absorb light through chlorophyll molecules in their leaves.
+        </div>
+      </div>
+      <div class="parent-child-viz" style="margin-left: 1rem;">
+        <div class="parent-label">CHILDREN (indexed for precise matching)</div>
+        <div class="child">Photosynthesis converts sunlight into chemical energy.</div>
+        <div class="child">Plants absorb light through chlorophyll molecules in their leaves.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <p style="color: var(--muted); font-size: 0.95rem; font-style: italic; margin-top: 1.5rem;">
+    Same passage. Four completely different sets of retrievable units. Which one wins depends on what your
+    users actually search for &mdash; and that is why chunking is the lever people underestimate.
+  </p>
+</header>
+
+<!-- ======================================================= -->
+<!-- TOC                                                      -->
+<!-- ======================================================= -->
+
+<nav class="toc">
+  <div class="toc-label">Contents of this volume</div>
+  <ol class="toc-list">
+    <li class="toc-item">
+      <span class="toc-num">iv.</span>
+      <a href="#chunking" class="toc-title">Chunking</a>
+      <span class="toc-note">fixed · recursive · semantic · parent-child · RAPTOR · agentic</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">v.</span>
+      <a href="#vectordbs" class="toc-title">Vector databases</a>
+      <span class="toc-note">IVF · PQ · HNSW · DiskANN · ScaNN · filtering · sharding</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">vi.</span>
+      <a href="#queries" class="toc-title">Query processing</a>
+      <span class="toc-note">rewrite · expand · HyDE · multi-query · self-query · intent</span>
+    </li>
+  </ol>
+</nav>
+
+
+<!-- ======================================================= -->
+<!-- CHAPTER 4 — CHUNKING                                     -->
+<!-- ======================================================= -->
+
+<section class="chapter" id="chunking">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter Four</div>
+    <h2 class="chapter-title">Chunking: the <em>lever nobody talks about</em>.</h2>
+    <p class="chapter-summary">
+      Chunking decides what the retriever can see. Everything downstream &mdash; embeddings, vector search,
+      generation &mdash; can only work with the pieces the chunker handed over. A good chunker beats a
+      better embedder more often than the reverse.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 4.0 The setup ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 4.0 &nbsp;·&nbsp; why chunking exists at all</span>
+    <h3 class="section-title">The problem in one sentence</h3>
+
+    <p>
+      Language models cannot read your whole corpus. Even models with huge context windows are too slow, too
+      expensive, and too easily distracted to answer well when you dump millions of tokens on them. So the
+      retriever&rsquo;s job is to find the small handful of pieces that actually matter, and hand only those
+      to the model.
+    </p>
+
+    <p>
+      The chunker is the thing that decides what a &ldquo;piece&rdquo; is. If you cut a paragraph in half,
+      the retriever will only ever match on one half at a time. If you make chunks too small, they lose the
+      context needed to make sense. Too big, and irrelevant content dilutes the signal.
+    </p>
+
+    <p>
+      This is why chunking dominates. You can have the best embedder in the world, but if it is embedding
+      broken half-sentences, none of that quality reaches the user.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 4.1 Fixed-size ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 4.1 &nbsp;·&nbsp; the naive baseline</span>
+    <h3 class="section-title">Fixed-size chunking</h3>
+
+    <p>
+      The simplest possible strategy: count tokens, cut every N. If N is 512, every chunk is 512 tokens long,
+      no matter what.
+    </p>
+
+    <p>
+      This is fast and reproducible. It is also indifferent to the content &mdash; it will happily cut through
+      the middle of a sentence, chop a code block in half, or split a paragraph so the topic sentence lives in
+      one chunk and the supporting detail in another. The retriever, later, will match on one half or the
+      other, never both.
+    </p>
+
+    <p>
+      Fixed-size is what you use when you need a baseline to measure everything else against, not what you
+      ship.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 4.2 Recursive ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 4.2 &nbsp;·&nbsp; the industry default</span>
+    <h3 class="section-title">Recursive character splitting</h3>
+
+    <p>
+      Recursive splitting is a small idea with a big effect: instead of cutting at a fixed length, prefer
+      cutting at natural boundaries when possible. The classic implementation is a ranked list of separators
+      to try, in order:
+    </p>
+
+    <ol>
+      <li>First, try to split on double-newlines (paragraph breaks).</li>
+      <li>If a chunk is still too big, split on single newlines (line breaks).</li>
+      <li>If still too big, split on sentence terminators (<code>.</code>, <code>?</code>, <code>!</code>).</li>
+      <li>Then on spaces.</li>
+      <li>Finally, characters &mdash; the last resort.</li>
+    </ol>
+
+    <p>
+      The recursion is greedy: at each level, split into pieces, and any piece still over the size limit
+      gets split by the next-finer separator. Most chunks end up ending at paragraph or sentence boundaries.
+      A few too-long paragraphs get further subdivided.
+    </p>
+
+    <p>
+      This is what LangChain&rsquo;s <code>RecursiveCharacterTextSplitter</code> does. It is boring, cheap,
+      and much better than fixed-size for almost no extra work. If you have not thought about chunking, this
+      is your starting point.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 4.3 Semantic ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 4.3 &nbsp;·&nbsp; using meaning to decide</span>
+    <h3 class="section-title">Semantic chunking</h3>
+
+    <p>
+      Recursive splitting respects punctuation but not <em>meaning</em>. Two paragraphs might both look like
+      normal prose to a text splitter, even though they are about completely different topics. Ideally you
+      want to cut where the topic changes.
+    </p>
+
+    <p>
+      Semantic chunking does exactly that. The recipe:
+    </p>
+
+    <ol>
+      <li>Split the document into sentences.</li>
+      <li>Embed each sentence.</li>
+      <li>For each pair of adjacent sentences, compute the distance between their embeddings.</li>
+      <li>Where the distance suddenly jumps &mdash; that is a topic boundary. Cut there.</li>
+    </ol>
+
+    <p>
+      The intuition: sentences about the same topic have similar embeddings, so their pairwise distances stay
+      small. Cross a topic boundary, and the next sentence lands in a different neighbourhood &mdash; the
+      distance spikes. That spike is your signal.
+    </p>
+
+    <p>
+      More concretely, you compute the distances, look at the distribution, and cut at, say, the top 5% of
+      distances. This gives you variable-length chunks aligned with real topic boundaries.
+    </p>
+
+    <div class="intuition">
+      <span class="intuition-label">The cost</span>
+      <p>
+        Semantic chunking costs an embedding call per sentence at ingestion time. That is real money for
+        large corpora. It also depends on the quality of the embedder you use for chunking &mdash; garbage
+        embeddings, garbage boundaries. In practice, semantic chunking is worth it for narrative content
+        (articles, reports, transcripts) and less useful for highly structured content where boundaries are
+        already obvious.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 4.4 Sliding window ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 4.4 &nbsp;·&nbsp; a small trick with big payoff</span>
+    <h3 class="section-title">Sliding window overlap</h3>
+
+    <p>
+      Every chunking strategy has an edge problem: what if the answer lives right on a boundary? Half the
+      sentence is in chunk 47, half is in chunk 48. Neither chunk retrieves cleanly.
+    </p>
+
+    <p>
+      The fix is to let chunks overlap. Instead of chunk 47 ending exactly where chunk 48 begins, they share
+      some tail-and-head content &mdash; typically 10 to 20 percent of the chunk size.
+    </p>
+
+    <p>
+      The math is simple. If your chunk size is 512 tokens and you use 15% overlap, each chunk overlaps its
+      neighbour by roughly 77 tokens. For a document of \(T\) tokens, the number of chunks becomes:
+    </p>
+
+    <div class="math-display">\[ N_{\text{chunks}} \approx \frac{T}{\text{size} - \text{overlap}} \]</div>
+
+    <p>
+      Overlap increases storage (you are storing some tokens more than once), but the effect on retrieval
+      quality is usually worth it, especially for narrative content. You do need to deduplicate at retrieval
+      time &mdash; if a query matches two overlapping chunks with the same core content, you do not want to
+      return both.
+    </p>
+
+    <p>
+      Rule of thumb: 15% overlap for prose, less for structured content where boundaries already carry
+      meaning.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 4.5 Parent-child ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 4.5 &nbsp;·&nbsp; the biggest quality unlock</span>
+    <h3 class="section-title">Parent-child chunking (small-to-big)</h3>
+
+    <p>
+      There is a fundamental tension in chunk sizing. Small chunks give <em>precise retrieval</em> &mdash;
+      the embedding is focused, matches are sharp. Large chunks give <em>rich generation context</em>
+      &mdash; the LLM has the surrounding paragraphs, not just the matching sentence.
+    </p>
+
+    <p>
+      Parent-child chunking sidesteps the tension by doing both. You keep two representations of the same
+      content:
+    </p>
+
+    <ul>
+      <li><strong>Children</strong>: small chunks (say, one sentence each). These go into the vector index.
+      Retrieval scores against these.</li>
+      <li><strong>Parents</strong>: larger chunks (a full paragraph or section). Stored separately, linked
+      by ID.</li>
+    </ul>
+
+    <p>
+      At query time: retrieve the top-k child chunks by similarity. Look up each child&rsquo;s parent.
+      Return the parents to the LLM.
+    </p>
+
+    <p>
+      You get precise matching (children are small and focused) and rich context (parents are large enough
+      to make sense on their own). For long-form question answering, this often produces a bigger quality
+      jump than any change to your embedder.
+    </p>
+
+    <div class="aside">
+      <div class="aside-label">Bookkeeping matters</div>
+      <p>
+        Store every child chunk with a <code>parent_id</code> pointing to its containing chunk. At retrieval,
+        deduplicate on parent_id &mdash; if three child chunks all point to the same parent, return that
+        parent once, not three times. This is one of those cases where good schema design at ingestion time
+        saves ugly logic later.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 4.6 RAPTOR ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 4.6 &nbsp;·&nbsp; retrieval at multiple scales</span>
+    <h3 class="section-title">Hierarchical chunking (RAPTOR)</h3>
+
+    <p>
+      Parent-child gives you two levels. RAPTOR &mdash; Recursive Abstractive Processing for Tree-Organized
+      Retrieval &mdash; gives you many. The idea is to build a tree of abstractions, and retrieve at whichever
+      level answers the question.
+    </p>
+
+    <p>The recipe:</p>
+
+    <ol>
+      <li>Chunk the corpus normally at the base level.</li>
+      <li>Embed the chunks and cluster them by topic (e.g. with Gaussian Mixture Models or K-means).</li>
+      <li>For each cluster, ask an LLM to write a summary of the chunks in that cluster.</li>
+      <li>Add those summaries to the index as new nodes.</li>
+      <li>Now cluster the summaries. Summarise those. Add to the index.</li>
+      <li>Repeat until you get to a single root summary of the whole corpus.</li>
+    </ol>
+
+    <p>
+      Now the index contains chunks (detail), cluster summaries (mid-level), and higher-order summaries
+      (big picture) &mdash; all in the same vector space. A specific question retrieves the detailed chunks;
+      a broad question like &ldquo;what does this corpus say about X overall&rdquo; retrieves the higher-level
+      summaries.
+    </p>
+
+    <p>
+      RAPTOR is powerful for cross-document synthesis but expensive to build: you are running LLM calls at
+      every level of the tree. Rebuild costs get large as the corpus grows, so it works best on
+      slower-changing collections.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 4.7 Adaptive & agentic ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 4.7 &nbsp;·&nbsp; letting the content decide</span>
+    <h3 class="section-title">Adaptive and agentic chunking</h3>
+
+    <p>
+      One chunking strategy for everything is a compromise. Real corpora are heterogeneous: prose, code,
+      tables, structured records, forms. Each has different natural boundaries.
+    </p>
+
+    <p>
+      <strong>Adaptive chunking</strong> means routing content to different chunkers based on type. Code is
+      chunked at function or class boundaries. Tables are kept whole and represented as Markdown. Prose goes
+      through recursive or semantic. This is not fancy &mdash; it is just refusing to use one hammer on
+      every nail.
+    </p>
+
+    <p>
+      <strong>Agentic chunking</strong> takes it further. Instead of using rules to find boundaries, you ask
+      an LLM to read the document and identify &ldquo;self-contained propositions&rdquo; &mdash; passages
+      that make sense on their own without external context. Each proposition becomes a chunk.
+    </p>
+
+    <p>
+      The quality is high because the LLM understands what &ldquo;makes sense on its own&rdquo; means. The
+      cost is also high &mdash; an LLM call per document at ingestion time is not cheap. Reserve this for
+      high-value, low-volume corpora: legal contracts, medical guidelines, curated knowledge bases.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 4.8 Knobs & tradeoffs ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 4.8 &nbsp;·&nbsp; the settings that matter</span>
+    <h3 class="section-title">The knobs, and what they do</h3>
+
+    <p>Every chunker has three knobs worth understanding.</p>
+
+    <h4 class="subsection-title">Chunk size</h4>
+    <p>
+      Usually somewhere between 256 and 1024 tokens. Smaller chunks give more precise retrieval and produce
+      more chunks (higher storage, more index entries). Larger chunks give the LLM more context per hit but
+      dilute the embedding signal &mdash; a 1500-token chunk covering three topics will not match well on
+      any of them.
+    </p>
+
+    <h4 class="subsection-title">Overlap</h4>
+    <p>
+      Typically 10-20% of chunk size. Larger for narrative content where ideas flow across boundaries; smaller
+      for structured content where cutting at a boundary loses nothing.
+    </p>
+
+    <h4 class="subsection-title">Boundary respect</h4>
+    <p>
+      Never split inside a sentence. Never split inside a code block. Never split inside a table. These
+      constraints override chunk size &mdash; better a slightly oversized chunk than a mangled one.
+    </p>
+
+    <h4 class="subsection-title">The tradeoff table</h4>
+
+    <table>
+      <thead>
+        <tr><th>Strategy</th><th>Precision</th><th>Context</th><th>Ingest cost</th><th>Storage</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Fixed</td><td>low</td><td>low</td><td>cheap</td><td>baseline</td></tr>
+        <tr><td>Recursive</td><td>medium</td><td>medium</td><td>cheap</td><td>baseline</td></tr>
+        <tr><td>Semantic</td><td>high</td><td>high</td><td>medium</td><td>1.0–1.2×</td></tr>
+        <tr><td>Sliding window</td><td>medium</td><td>high</td><td>cheap</td><td>1.2×</td></tr>
+        <tr><td>Parent-child</td><td>high</td><td>very high</td><td>medium</td><td>1.5–2×</td></tr>
+        <tr><td>RAPTOR</td><td>high</td><td>very high</td><td>expensive</td><td>1.5×</td></tr>
+        <tr><td>Agentic</td><td>highest</td><td>highest</td><td>very expensive</td><td>1×</td></tr>
+      </tbody>
+    </table>
+
+    <p class="big-idea">
+      Test three or four chunk sizes on a held-out evaluation set before shipping. Retrieval Recall@k is the
+      metric. Everyone skips this step; nobody who did skip it was glad they did.
+    </p>
+  </div>
+</section>
+
+
+<div class="divider">· · ·</div>
+
+
+<!-- ======================================================= -->
+<!-- CHAPTER 5 — VECTOR DATABASES                             -->
+<!-- ======================================================= -->
+
+<section class="chapter" id="vectordbs">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter Five</div>
+    <h2 class="chapter-title">Vector databases: <em>storing the billions</em>.</h2>
+    <p class="chapter-summary">
+      Once you have vectors, you need to find the nearest neighbours of a query vector across possibly
+      billions of them, in tens of milliseconds. This is the whole problem vector databases exist to solve,
+      and the way they solve it &mdash; approximate nearest neighbour indexes &mdash; is worth understanding
+      in real detail.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 5.0 Setup ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 5.0 &nbsp;·&nbsp; the impossibility of brute force</span>
+    <h3 class="section-title">Why we cannot just check every vector</h3>
+
+    <p>
+      Suppose you have a billion 768-dimensional vectors. To find the nearest neighbour of a query, you have
+      to compute the similarity between the query and each vector. That is:
+    </p>
+
+    <div class="math-display">\[ \text{cost} = O(N \cdot d) = O(10^9 \cdot 768) \approx 10^{12} \text{ multiplications} \]</div>
+
+    <p>
+      Even on modern hardware, that is many seconds per query. Not tolerable. So we accept a small loss of
+      accuracy in exchange for enormous speedups. This is the trade at the heart of the field &mdash;
+      approximate nearest neighbour search, or ANN.
+    </p>
+
+    <p>
+      The rest of this chapter is about how the trade is structured. We look at each major index type,
+      what problem it solves, and what it costs.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 5.1 Flat ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 5.1 &nbsp;·&nbsp; the baseline you always keep</span>
+    <h3 class="section-title">Flat (brute force) indexes</h3>
+
+    <p>
+      Flat means no index at all &mdash; just store the vectors and compare the query to every one. Slow,
+      but exact. You always get the true top-k.
+    </p>
+
+    <p>
+      Two reasons to care. First, up to about a million vectors on modern hardware, flat is fast enough for
+      many use cases. Second, and more important: flat is the <strong>ground truth</strong> for measuring
+      the accuracy of any approximate method. You cannot evaluate your HNSW recall without something to
+      compare its results against.
+    </p>
+
+    <p>
+      Always keep a flat baseline available for a subset of your data. It is the only way to know if your
+      approximate index is any good.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 5.2 IVF ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 5.2 &nbsp;·&nbsp; the clustering approach</span>
+    <h3 class="section-title">IVF: divide the space, search only the neighbourhood</h3>
+
+    <p>
+      The first big idea. Instead of comparing the query to every vector, first cluster the vectors into
+      groups (called <em>cells</em> or <em>inverted lists</em>). Then, at query time, only search inside
+      the cells nearest to the query.
+    </p>
+
+    <p>The recipe:</p>
+
+    <ol>
+      <li>Run k-means on the vectors, producing <code>nlist</code> clusters. Each vector belongs to one
+      cluster (its nearest centroid).</li>
+      <li>To answer a query, compute the query&rsquo;s distance to each centroid.</li>
+      <li>Take the <code>nprobe</code> closest centroids.</li>
+      <li>Only compare the query against vectors in those cells.</li>
+    </ol>
+
+    <p>
+      If <code>nlist</code> is 1024 and <code>nprobe</code> is 8, you search roughly \(8/1024 \approx 0.8\%\)
+      of your data. That is a huge speedup. Query cost drops from \(O(N \cdot d)\) to approximately:
+    </p>
+
+    <div class="math-display">\[ O\left(\text{nprobe} \cdot \frac{N}{\text{nlist}} \cdot d + \text{nlist} \cdot d\right) \]</div>
+
+    <p>
+      The two terms are: distance to centroids (searching \(\text{nlist}\) of them), plus vectors inside
+      the chosen cells.
+    </p>
+
+    <p>
+      The trade is transparent: raise <code>nprobe</code> for higher recall (more cells searched, more
+      candidates considered) and lower QPS. Lower <code>nprobe</code> for the opposite. This is why IVF is
+      loved &mdash; the trade is easy to tune.
+    </p>
+
+    <div class="intuition">
+      <span class="intuition-label">The failure mode</span>
+      <p>
+        IVF misses the true nearest neighbour when the query is close to a cell boundary. Its actual nearest
+        neighbour might live one cell over. Raising <code>nprobe</code> helps but never guarantees. This is
+        why real deployments rarely use IVF alone &mdash; it usually gets combined with something else.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 5.3 PQ ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 5.3 &nbsp;·&nbsp; compression, cleverly</span>
+    <h3 class="section-title">Product Quantization</h3>
+
+    <p>
+      Vectors are large. A single 768-dimensional float32 vector takes \(768 \times 4 = 3072\) bytes. A
+      billion of them takes about 3 terabytes. You cannot fit that in RAM. Even on SSD it is huge and slow.
+    </p>
+
+    <p>
+      Product Quantization compresses vectors dramatically by taking advantage of a subtle insight: you do
+      not need to store the exact vector to find nearest neighbours &mdash; you only need to compute
+      distances approximately.
+    </p>
+
+    <p>The recipe:</p>
+
+    <ol>
+      <li>Split each \(d\)-dimensional vector into \(m\) sub-vectors of dimension \(d/m\). For \(d = 768,\;
+      m = 8\), each sub-vector is 96-dimensional.</li>
+      <li>For each of the \(m\) sub-vector positions, run k-means over all training vectors to build a
+      codebook of, say, \(k = 256\) centroids.</li>
+      <li>Now, to encode a vector, replace each sub-vector with the index (0–255) of its nearest centroid
+      in the corresponding codebook.</li>
+      <li>Each vector becomes \(m\) bytes.</li>
+    </ol>
+
+    <p>
+      Concretely: your 3072-byte vector becomes 8 bytes &mdash; a 384× compression. A billion vectors fit
+      in 8 GB.
+    </p>
+
+    <p>
+      To compute distances, you precompute the distance between the query and every centroid in every
+      codebook (a small table). Then approximate the distance between the query and any encoded vector by
+      looking up \(m\) precomputed distances and summing them:
+    </p>
+
+    <div class="math-display">\[ \text{dist}(q, x) \approx \sum_{i=1}^{m} \text{dist}(q_i, c_{i, \text{code}_i(x)}) \]</div>
+    <div class="math-caption">Where c is the centroid at the i-th codebook indexed by the vector's i-th code</div>
+
+    <p>
+      No floating-point multiplications on the vector itself &mdash; just \(m\) lookups and a sum. This is
+      why PQ is fast even without a GPU.
+    </p>
+
+    <div class="aside">
+      <div class="aside-label">OPQ, the small improvement that matters</div>
+      <p>
+        PQ works best when the sub-vectors are uncorrelated &mdash; when each sub-vector captures a distinct
+        aspect of meaning. In practice, the raw dimensions of an embedding are usually not aligned that way.
+        <strong>OPQ</strong> (Optimized Product Quantization) learns a rotation matrix during training that
+        rotates the vectors so their sub-vectors are as decorrelated as possible <em>before</em> quantizing.
+        Same compression, better recall.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 5.4 IVF-PQ ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 5.4 &nbsp;·&nbsp; the on-disk workhorse</span>
+    <h3 class="section-title">IVF-PQ: clustering plus compression</h3>
+
+    <p>
+      IVF makes search fast by narrowing where you look. PQ makes it cheap by shrinking what you store.
+      Combined, IVF-PQ handles enormous corpora on modest hardware. It is the dominant on-disk approach
+      for billion-scale retrieval.
+    </p>
+
+    <p>
+      Rough shape: use IVF to route the query to the right cells, then use PQ-compressed vectors within
+      those cells to compute approximate distances. You get about \(10^9\) vectors on a single machine at
+      reasonable recall.
+    </p>
+
+    <p>
+      This is what FAISS ships as <code>IndexIVFPQ</code>. It is what powers most of the large-scale open
+      systems in production.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 5.5 HNSW ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 5.5 &nbsp;·&nbsp; the graph approach</span>
+    <h3 class="section-title">HNSW: navigating a small world</h3>
+
+    <p>
+      HNSW &mdash; Hierarchical Navigable Small World &mdash; is the most popular in-memory ANN algorithm.
+      Its recall is excellent and its query latency is low. It is what most modern vector databases use by
+      default.
+    </p>
+
+    <p>The idea in one sentence: build a graph where similar vectors are connected, then search by walking.</p>
+
+    <p>Concretely, here is the picture.</p>
+
+    <div class="hnsw-diagram">
+      <svg viewBox="0 0 600 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="HNSW graph diagram">
+        <style>
+          .layer-label { font-family: "Inter", sans-serif; font-size: 10px; fill: #7A736A; letter-spacing: 0.15em; text-transform: uppercase; }
+          .node { fill: #2E5266; }
+          .node-target { fill: #B8722E; }
+          .edge { stroke: #B8AE97; stroke-width: 0.8; }
+          .path-edge { stroke: #B8722E; stroke-width: 2; }
+          .query { fill: none; stroke: #B8722E; stroke-width: 1.5; }
+          .caption { font-family: "Source Serif 4", serif; font-size: 10px; fill: #3A3733; font-style: italic; }
+        </style>
+
+        <!-- Layer 2 -->
+        <text x="30" y="35" class="layer-label">Layer 2</text>
+        <line x1="120" y1="40" x2="280" y2="40" class="edge"/>
+        <line x1="280" y1="40" x2="450" y2="40" class="edge"/>
+        <line x1="120" y1="40" x2="450" y2="40" class="edge"/>
+        <!-- search path top -->
+        <line x1="120" y1="40" x2="280" y2="40" class="path-edge"/>
+        <circle cx="120" cy="40" r="5" class="node"/>
+        <circle cx="280" cy="40" r="5" class="node"/>
+        <circle cx="450" cy="40" r="5" class="node"/>
+
+        <!-- Descent -->
+        <line x1="280" y1="45" x2="290" y2="100" class="path-edge" stroke-dasharray="3 3"/>
+
+        <!-- Layer 1 -->
+        <text x="30" y="115" class="layer-label">Layer 1</text>
+        <line x1="90" y1="120" x2="180" y2="120" class="edge"/>
+        <line x1="180" y1="120" x2="290" y2="120" class="edge"/>
+        <line x1="290" y1="120" x2="380" y2="120" class="edge"/>
+        <line x1="380" y1="120" x2="480" y2="120" class="edge"/>
+        <line x1="90" y1="120" x2="290" y2="120" class="edge"/>
+        <line x1="180" y1="120" x2="380" y2="120" class="edge"/>
+        <line x1="290" y1="120" x2="480" y2="120" class="edge"/>
+        <!-- search path middle -->
+        <line x1="290" y1="120" x2="380" y2="120" class="path-edge"/>
+        <circle cx="90" cy="120" r="5" class="node"/>
+        <circle cx="180" cy="120" r="5" class="node"/>
+        <circle cx="290" cy="120" r="5" class="node"/>
+        <circle cx="380" cy="120" r="5" class="node"/>
+        <circle cx="480" cy="120" r="5" class="node"/>
+
+        <!-- Descent -->
+        <line x1="380" y1="125" x2="400" y2="195" class="path-edge" stroke-dasharray="3 3"/>
+
+        <!-- Layer 0 -->
+        <text x="30" y="215" class="layer-label">Layer 0</text>
+        <line x1="70" y1="220" x2="140" y2="200" class="edge"/>
+        <line x1="140" y1="200" x2="210" y2="215" class="edge"/>
+        <line x1="210" y1="215" x2="280" y2="205" class="edge"/>
+        <line x1="280" y1="205" x2="340" y2="220" class="edge"/>
+        <line x1="340" y1="220" x2="400" y2="200" class="edge"/>
+        <line x1="400" y1="200" x2="450" y2="215" class="edge"/>
+        <line x1="450" y1="215" x2="510" y2="205" class="edge"/>
+        <line x1="70" y1="220" x2="210" y2="215" class="edge"/>
+        <line x1="140" y1="200" x2="280" y2="205" class="edge"/>
+        <line x1="280" y1="205" x2="400" y2="200" class="edge"/>
+        <line x1="340" y1="220" x2="450" y2="215" class="edge"/>
+        <!-- search path bottom -->
+        <line x1="400" y1="200" x2="450" y2="215" class="path-edge"/>
+        <circle cx="70" cy="220" r="5" class="node"/>
+        <circle cx="140" cy="200" r="5" class="node"/>
+        <circle cx="210" cy="215" r="5" class="node"/>
+        <circle cx="280" cy="205" r="5" class="node"/>
+        <circle cx="340" cy="220" r="5" class="node"/>
+        <circle cx="400" cy="200" r="5" class="node"/>
+        <circle cx="450" cy="215" r="6" class="node-target"/>
+        <circle cx="510" cy="205" r="5" class="node"/>
+
+        <!-- Query marker -->
+        <text x="500" y="235" class="caption">← target</text>
+        <text x="115" y="30" class="caption">start (entry point)</text>
+      </svg>
+    </div>
+
+    <p>
+      The graph has multiple layers. The top layer is sparse &mdash; a few nodes with long connections
+      between distant regions of the space. Each lower layer has more nodes and denser, shorter connections.
+      The bottom layer contains every vector.
+    </p>
+
+    <p>To search:</p>
+
+    <ol>
+      <li>Start at a designated entry point in the top layer.</li>
+      <li>Greedily walk to whichever connected neighbour is closest to the query.</li>
+      <li>Keep walking until no neighbour is closer than the current node &mdash; you have found the local
+      minimum for this layer.</li>
+      <li>Drop down to the next layer and repeat, using the current node as the new entry point.</li>
+      <li>At the bottom layer, the local minimum is (approximately) your nearest neighbour.</li>
+    </ol>
+
+    <p>
+      Why the layers help: the top layer lets you take huge leaps across the space quickly. As you descend,
+      you refine within smaller regions. You never have to look at more than a tiny fraction of the graph.
+      This is what makes HNSW roughly \(O(\log N)\) in the number of vectors.
+    </p>
+
+    <h4 class="subsection-title">The parameters</h4>
+
+    <ul>
+      <li><strong>M</strong>: the number of neighbours each node has at each layer. Typically 16 to 64.
+      Higher M gives better recall but uses more memory.</li>
+      <li><strong>ef_construction</strong>: the size of the candidate list used when building the graph.
+      Typically 200–500. Higher means a better graph, longer build time.</li>
+      <li><strong>ef_search</strong>: the size of the candidate list used at query time. This is the
+      runtime knob for the recall/latency trade. Higher ef_search means more candidates considered per
+      query, better recall, slower.</li>
+    </ul>
+
+    <h4 class="subsection-title">Memory footprint</h4>
+
+    <p>Roughly, each vector costs:</p>
+
+    <div class="math-display">\[ \text{bytes per vector} \approx d \cdot 4 + M \cdot 8 \]</div>
+
+    <p>
+      The first term is the raw vector (float32). The second is the graph edges &mdash; \(M\) pointers per
+      layer, and vectors on average have a few layers. For \(d = 768, M = 32\), that is roughly 3.3 KB per
+      vector, or 3.3 GB per million.
+    </p>
+
+    <div class="intuition">
+      <span class="intuition-label">Where HNSW breaks</span>
+      <p>
+        HNSW handles inserts cleanly but not deletes. Removing a node leaves &ldquo;holes&rdquo; in the
+        graph &mdash; tombstoned entries that still occupy the structure. Over time, deletes accumulate and
+        recall degrades. The remedy is periodic rebuild. If your corpus churns heavily, plan for it.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 5.6 DiskANN & ScaNN ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 5.6 &nbsp;·&nbsp; the specialists</span>
+    <h3 class="section-title">DiskANN and ScaNN</h3>
+
+    <p>
+      HNSW is superb when your graph fits in RAM. Once your corpus grows past that, you have two options:
+      shard across machines, or move to a disk-friendly algorithm.
+    </p>
+
+    <p>
+      <strong>DiskANN</strong> (from Microsoft Research, sometimes called Vamana) is a graph index designed
+      to live on SSD. The graph structure is tuned so that a query touches only a small number of pages on
+      disk, and the memory usage is a small fraction of the vectors. A single machine with an SSD can hold
+      a billion vectors and answer queries in tens of milliseconds. This is what many billion-scale systems
+      use.
+    </p>
+
+    <p>
+      <strong>ScaNN</strong> (from Google) attacks the problem from a different angle. Its central innovation
+      is <em>anisotropic quantization</em>: when compressing vectors, minimize the error in the direction
+      that matters most for maximum inner product search &mdash; not the overall error uniformly. If a
+      component of the vector matters more for computing inner products, spend more of your quantization
+      budget on preserving it. This gives excellent recall at low storage.
+    </p>
+
+    <p>
+      In interviews, knowing which company built which is a useful thread. DiskANN is Microsoft. ScaNN is
+      Google. FAISS is Meta. Each ships as a research-grade artefact and gets wrapped by vendors.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 5.7 Metadata filtering ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 5.7 &nbsp;·&nbsp; combining vectors with structured fields</span>
+    <h3 class="section-title">Metadata filtering</h3>
+
+    <p>
+      Real queries almost always come with structured constraints. &ldquo;Find me support tickets similar
+      to this one, but only in the last 30 days, and only from Enterprise customers.&rdquo; The vector search
+      handles &ldquo;similar to this one.&rdquo; The filter handles the rest.
+    </p>
+
+    <p>Combining them is harder than it looks. There are three approaches.</p>
+
+    <h4 class="subsection-title">Pre-filter</h4>
+    <p>
+      First apply the filter to shrink the candidate set. Then run vector search only on what remains.
+      Correct results but potentially slow &mdash; if the filter is very selective (say, 0.1% of the corpus
+      matches), you might end up doing something close to brute force on that subset because the ANN index
+      cannot help.
+    </p>
+
+    <h4 class="subsection-title">Post-filter</h4>
+    <p>
+      Run vector search first to get the top-K candidates, then apply the filter to what came back. Fast,
+      but broken if none of the top-K happen to match your filter &mdash; you get empty results even though
+      relevant documents exist elsewhere.
+    </p>
+
+    <h4 class="subsection-title">Filtered search (native)</h4>
+    <p>
+      The best modern approach: integrate the filter into the ANN traversal itself. As HNSW walks the graph,
+      it only considers nodes that pass the filter. Nothing is retrieved that would be filtered out anyway,
+      and the search visits exactly the right region of the graph.
+    </p>
+
+    <p>
+      Qdrant, Weaviate, and Pinecone all support native filtered search. If your workload is
+      filter-heavy, this is the feature that matters most in your database choice.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 5.8 Systems overview ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 5.8 &nbsp;·&nbsp; the landscape</span>
+    <h3 class="section-title">Which system, when</h3>
+
+    <p>
+      There is no universally best vector database. Each has a shape it fits.
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>System</th><th>Strengths</th><th>Weaknesses</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>FAISS</strong></td><td>Fast library, many index types, in-memory</td><td>You build the service around it</td></tr>
+        <tr><td><strong>Pinecone</strong></td><td>Fully managed, hybrid built-in, serverless option</td><td>Cost, vendor lock-in</td></tr>
+        <tr><td><strong>Milvus</strong></td><td>Scales to 10B+ vectors, GPU support</td><td>Operational complexity</td></tr>
+        <tr><td><strong>Weaviate</strong></td><td>Built-in vectorization, hybrid, GraphQL</td><td>Smaller ecosystem</td></tr>
+        <tr><td><strong>Qdrant</strong></td><td>Fast (Rust), excellent filtering, clean API</td><td>Newer, smaller community</td></tr>
+        <tr><td><strong>Chroma</strong></td><td>Easy for dev and prototypes</td><td>Not for production scale</td></tr>
+        <tr><td><strong>pgvector</strong></td><td>Postgres extension: SQL, transactions</td><td>Slower at scale, HNSW-only</td></tr>
+        <tr><td><strong>Vespa</strong></td><td>Full search + vectors, tensor evaluation, huge scale</td><td>Steep learning curve</td></tr>
+        <tr><td><strong>OpenSearch / Elastic</strong></td><td>Mature, familiar, hybrid</td><td>Vector performance trails specialists</td></tr>
+        <tr><td><strong>LanceDB</strong></td><td>Columnar, versioned, ML workflows</td><td>Newer</td></tr>
+      </tbody>
+    </table>
+
+    <p>A rough decision tree:</p>
+
+    <ul>
+      <li>Already on Postgres and under 10M vectors → <strong>pgvector</strong>.</li>
+      <li>Prototyping → <strong>Chroma</strong>.</li>
+      <li>Need managed, do not want to think → <strong>Pinecone</strong>.</li>
+      <li>Filter-heavy workload → <strong>Qdrant</strong> or <strong>Weaviate</strong>.</li>
+      <li>Billion-scale, self-hosted → <strong>Milvus</strong> or <strong>Vespa</strong>.</li>
+      <li>Custom systems, maximum control → <strong>FAISS</strong> as a library.</li>
+    </ul>
+
+    <p class="big-idea">
+      Whatever you pick, benchmark it. Report Recall@k versus QPS for your specific config on your specific
+      data. That curve is the honest answer to &ldquo;is it working.&rdquo;
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 5.9 Recall metric ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 5.9 &nbsp;·&nbsp; measuring goodness</span>
+    <h3 class="section-title">The metric everyone should track</h3>
+
+    <p>
+      Recall@k measures what fraction of the true top-k neighbours (as computed by brute force) your
+      approximate index actually returned.
+    </p>
+
+    <div class="math-display">\[ \text{Recall@k} = \frac{|\, \text{ANN}_k \cap \text{true}_k \,|}{k} \]</div>
+
+    <p>
+      Where \(\text{ANN}_k\) is the top-k from your approximate index, and \(\text{true}_k\) is the true
+      top-k from an exact (flat) search.
+    </p>
+
+    <p>
+      Every ANN system has a recall/latency curve. Higher recall means visiting more candidates, which
+      means slower queries. Where you land on that curve is a choice, not a fixed property of the algorithm.
+      Reporting your target Recall@k alongside your latency is the honest way to describe performance.
+    </p>
+  </div>
+</section>
+
+
+<div class="divider">· · ·</div>
+
+
+<!-- ======================================================= -->
+<!-- CHAPTER 6 — QUERY PROCESSING                             -->
+<!-- ======================================================= -->
+
+<section class="chapter" id="queries">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter Six</div>
+    <h2 class="chapter-title">Query processing: <em>bridging user and corpus</em>.</h2>
+    <p class="chapter-summary">
+      Users do not write like documents. Documents do not answer questions the way questions are asked.
+      Between the two is a translation problem &mdash; and where that translation goes wrong is where most
+      retrieval systems actually fail.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 6.0 Setup ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 6.0 &nbsp;·&nbsp; the gap</span>
+    <h3 class="section-title">The intent-vs-surface problem</h3>
+
+    <p>
+      A user types: &ldquo;what about Q4?&rdquo; They mean, based on the prior conversation, &ldquo;what
+      was Apple&rsquo;s revenue in Q4 2024?&rdquo; But your retriever sees the literal string
+      &ldquo;what about Q4?&rdquo; No document on earth says that.
+    </p>
+
+    <p>
+      Or the user types &ldquo;how do I stop my dog from barking at the mailman.&rdquo; The document that
+      answers this says &ldquo;canine reactivity to visitors can be modified through counter-conditioning
+      protocols.&rdquo; No shared vocabulary. Dense embedding helps, but only some.
+    </p>
+
+    <p>
+      Query processing is the layer that reshapes the user&rsquo;s question into something a retriever can
+      actually work with. Its techniques are various, and picking the right one for your workload is more
+      important than most people give it credit for.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 6.1 Query rewriting ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 6.1 &nbsp;·&nbsp; making the query self-contained</span>
+    <h3 class="section-title">Query rewriting</h3>
+
+    <p>
+      Query rewriting is the simplest bridge: pass the user&rsquo;s raw query (along with the conversation
+      history) to an LLM and ask it to produce a self-contained, search-friendly version.
+    </p>
+
+    <p>
+      This is especially important in multi-turn conversations. The first question, &ldquo;how did Apple
+      perform last year?&rdquo;, is fine. The follow-up, &ldquo;what about Q4?&rdquo;, is not searchable on
+      its own. A rewriter turns it into &ldquo;Apple financial performance Q4 2024&rdquo; using context from
+      the earlier turn.
+    </p>
+
+    <p>
+      The prompt is usually simple: give the LLM the conversation history and the raw query, ask it to
+      produce a standalone query optimised for search. Return that as the string you actually embed and
+      match.
+    </p>
+
+    <div class="aside">
+      <div class="aside-label">The cost you pay</div>
+      <p>
+        Rewriting adds an LLM call to every query &mdash; typically 200 to 500 milliseconds of latency.
+        For interactive systems that matters. Two mitigations: cache aggressively (many queries look alike),
+        and use a small distilled model just for rewriting rather than your main generator. Always log the
+        rewritten query alongside the original; when a user reports bad results, the rewrite is the first
+        thing you want to see.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 6.2 Query expansion ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 6.2 &nbsp;·&nbsp; casting a wider net</span>
+    <h3 class="section-title">Query expansion</h3>
+
+    <p>
+      Expansion means adding related terms to the query to catch documents that use different vocabulary.
+      There are two traditions.
+    </p>
+
+    <h4 class="subsection-title">Rocchio pseudo-relevance feedback</h4>
+    <p>
+      A classic IR technique. The intuition: run the search once, take the top few results, assume they are
+      probably relevant, and pull the query embedding in their direction. Formally:
+    </p>
+
+    <div class="math-display">\[ q_{\text{new}} = \alpha \cdot q + \beta \cdot \frac{1}{|D_r|} \sum_{d \in D_r} d - \gamma \cdot \frac{1}{|D_n|} \sum_{d \in D_n} d \]</div>
+
+    <p>
+      Where \(D_r\) is the set of assumed-relevant top results, \(D_n\) is the assumed-non-relevant tail,
+      and \(\alpha, \beta, \gamma\) are weights (typically \(\alpha \approx 1, \beta \approx 0.75, \gamma \approx 0.15\)).
+      The updated query is closer to the relevant documents and further from the irrelevant ones. You
+      re-run search with the new query.
+    </p>
+
+    <h4 class="subsection-title">LLM-based expansion</h4>
+    <p>
+      Simpler and often better: ask an LLM for related terms and synonyms, and append them to the query.
+      For a query about &ldquo;heart attack,&rdquo; the LLM adds &ldquo;myocardial infarction, cardiac
+      arrest, MI, chest pain.&rdquo; The expanded query catches documents using medical terminology the user
+      did not know.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 6.3 HyDE ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 6.3 &nbsp;·&nbsp; the counterintuitive trick</span>
+    <h3 class="section-title">HyDE: retrieve using a fake answer</h3>
+
+    <p>
+      HyDE stands for Hypothetical Document Embeddings, and it is the most interesting technique in this
+      chapter. The setup:
+    </p>
+
+    <ol>
+      <li>Take the user&rsquo;s query.</li>
+      <li>Ask an LLM to write what a plausible answer would look like. Do not check whether the answer is
+      actually correct.</li>
+      <li>Embed the fake answer.</li>
+      <li>Use the fake answer&rsquo;s embedding as the query for retrieval.</li>
+    </ol>
+
+    <p>
+      The trick is that a fake answer looks stylistically much more like a real document than a question
+      does. Queries and documents live in different regions of embedding space &mdash; questions are short,
+      have interrogative structure, and phrase things from the outside. Answers are declarative, longer,
+      and use the vocabulary the target documents use.
+    </p>
+
+    <p>
+      By embedding a fake answer, you jump into the &ldquo;document neighbourhood&rdquo; of the embedding
+      space, where the real documents live. Retrieval finds them more easily.
+    </p>
+
+    <p>
+      HyDE works remarkably well zero-shot &mdash; no fine-tuning, no training data. It is also one of the
+      cheapest quality improvements you can make.
+    </p>
+
+    <div class="intuition">
+      <span class="intuition-label">When HyDE hurts</span>
+      <p>
+        HyDE fails on queries that are already document-shaped. FAQs (&ldquo;What is the return policy?&rdquo;)
+        and definitional queries (&ldquo;Define machine learning&rdquo;) look enough like docs that generating
+        a fake answer adds noise rather than useful vocabulary. If your traffic is mostly FAQ-shaped, HyDE
+        is not worth the LLM call.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 6.4 Multi-query ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 6.4 &nbsp;·&nbsp; safety in numbers</span>
+    <h3 class="section-title">Multi-query retrieval</h3>
+
+    <p>
+      Instead of relying on one phrasing of the query, generate several. Ask an LLM to produce three to
+      five paraphrases, run retrieval for each, and union the results (deduplicating along the way).
+    </p>
+
+    <p>
+      For a query &ldquo;how do I train a puppy not to bite,&rdquo; you might get:
+    </p>
+
+    <ul>
+      <li>&ldquo;puppy bite training methods&rdquo;</li>
+      <li>&ldquo;stopping mouthing behaviour in young dogs&rdquo;</li>
+      <li>&ldquo;bite inhibition training for puppies&rdquo;</li>
+      <li>&ldquo;how to teach a puppy not to nip&rdquo;</li>
+    </ul>
+
+    <p>
+      Each paraphrase retrieves a slightly different set. Their union covers more ground than any single
+      query could. This is a simple, robust technique &mdash; it usually helps and rarely hurts.
+    </p>
+
+    <p>
+      The cost, again, is latency and LLM calls. Cache paraphrases for common queries; run them in parallel
+      where the retriever supports it.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 6.5 Self-query ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 6.5 &nbsp;·&nbsp; teaching the query to filter itself</span>
+    <h3 class="section-title">Self-query retrieval</h3>
+
+    <p>
+      Users often mix semantic and structured constraints in one sentence: &ldquo;papers about diffusion
+      models published after 2022&rdquo; or &ldquo;support tickets from Enterprise customers related to
+      billing.&rdquo;
+    </p>
+
+    <p>
+      Self-query retrieval uses an LLM to parse such queries into two pieces:
+    </p>
+
+    <ul>
+      <li>A <strong>semantic query</strong>: the part you actually embed and match.</li>
+      <li>A <strong>structured filter</strong>: the constraints applied to metadata.</li>
+    </ul>
+
+    <p>
+      &ldquo;Papers about diffusion models published after 2022&rdquo; becomes:
+    </p>
+
+    <pre><code>{
+  "semantic_query": "diffusion models",
+  "filter": { "year": { "$gte": 2022 } }
+}</code></pre>
+
+    <p>
+      Then you run a filtered vector search using both pieces. This handles the mixed-intent case cleanly
+      &mdash; the semantic part matches on content, the filter part enforces the constraint.
+    </p>
+
+    <p>
+      The LLM prompt needs to know your schema (which fields exist and what values they take). Give it the
+      schema in the system prompt and it can usually extract filters reliably.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 6.6 Spell & synonym ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 6.6 &nbsp;·&nbsp; the boring but critical layer</span>
+    <h3 class="section-title">Spell correction and domain synonyms</h3>
+
+    <p>
+      A user searching an e-commerce catalogue for &ldquo;iphonr charger&rdquo; will get zero results if
+      you match literally. That is unacceptable. Spell correction is table stakes for any search product.
+    </p>
+
+    <p>
+      Approaches include BK-trees, SymSpell (very fast, precomputes deletes within a Levenshtein distance),
+      and, increasingly, LLM-based correction. For any real product, spell correction should sit in front
+      of the retrieval layer and quietly fix common typos.
+    </p>
+
+    <p>
+      In specialist domains, you often need <strong>synonym expansion</strong> beyond what a general model
+      knows. Medical retrieval maps ICD codes and SNOMED terms. Legal retrieval maps terms of art. E-commerce
+      maps brand names and product categories. These are usually curated dictionaries maintained separately
+      from your retrieval model.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 6.7 Intent ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 6.7 &nbsp;·&nbsp; different queries want different pipelines</span>
+    <h3 class="section-title">Intent detection and routing</h3>
+
+    <p>
+      Not every query wants the same retrieval strategy. A FAQ-style query wants a short direct answer from
+      a curated FAQ index. A long-form research question wants many chunks stitched together from a large
+      corpus. A code question wants a code-specific index with function-level chunking.
+    </p>
+
+    <p>
+      Intent detection is a small classifier &mdash; often just an LLM call &mdash; that labels the query
+      before retrieval. The label routes the query to a specific backend. Each backend can then be tuned
+      for its class of question, with its own chunker, embedder, and retriever configuration.
+    </p>
+
+    <p>
+      This is one of those architectural choices that unlocks a lot of downstream flexibility. It also
+      demands more infrastructure than a single-pipeline system, so it is only worth it once you actually
+      have distinguishable query classes with distinguishable needs.
+    </p>
+
+    <p class="big-idea">
+      Query processing is where the user meets the retriever. Every technique in this chapter is a small
+      translation. Together, they close a gap that would otherwise show up as &ldquo;the answer looked
+      right but was for the wrong question.&rdquo;
+    </p>
+  </div>
+</section>
+
+
+<!-- ======================================================= -->
+<!-- CLOSING                                                  -->
+<!-- ======================================================= -->
+
+<div class="closing">
+  End of Volume II &nbsp;·&nbsp; six chapters, together &nbsp;·&nbsp; <em>next: reranking, generation, evaluation.</em>
+</div>
+
+</main>
+
+</body>
+</html>

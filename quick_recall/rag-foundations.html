@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Retrieval Notebook — Foundations, Embeddings, Documents</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']]
+  },
+  chtml: { scale: 1.05 }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<style>
+:root {
+  --paper: #F5F1E8;
+  --paper-2: #EFE9DA;
+  --paper-3: #E8E1CE;
+  --ink: #1C1917;
+  --ink-2: #3A3733;
+  --muted: #7A736A;
+  --rule: #D9D2C1;
+  --rule-strong: #B8AE97;
+  --accent: #2E5266;       /* petrol blue */
+  --accent-2: #B8722E;     /* ochre — the signature warm tone */
+  --accent-soft: rgba(46, 82, 102, 0.08);
+  --code-bg: #1C1917;
+  --code-ink: #E8E1CE;
+  --highlight-a: #B8722E;
+  --highlight-b: #6B8E4E;  /* moss */
+  --highlight-c: #8B4B6B;  /* plum */
+  --highlight-d: #2E5266;  /* petrol */
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 17px;
+  line-height: 1.7;
+  font-feature-settings: "kern", "liga", "onum";
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 4rem 2rem 8rem;
+}
+
+/* ---------- Hero ---------- */
+
+.hero { margin-bottom: 6rem; }
+
+.hero-eyebrow {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.hero-eyebrow::before {
+  content: "";
+  width: 32px;
+  height: 1px;
+  background: var(--rule-strong);
+}
+
+.hero-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+  font-variation-settings: "opsz" 144, "SOFT" 30;
+}
+
+.hero-title em {
+  font-style: italic;
+  color: var(--accent);
+  font-variation-settings: "opsz" 144, "SOFT" 100;
+}
+
+.hero-lede {
+  font-size: 1.15rem;
+  color: var(--ink-2);
+  max-width: 62ch;
+  margin-bottom: 3rem;
+  font-family: "Source Serif 4", serif;
+}
+
+/* Annotated formula — the signature element */
+
+.formula-anatomy {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  padding: 2.25rem 2rem 1.75rem;
+  margin: 3rem -1rem;
+  border-radius: 2px;
+  position: relative;
+}
+
+.formula-anatomy::before {
+  content: "The formula, unpacked";
+  position: absolute;
+  top: -0.6rem;
+  left: 1.75rem;
+  background: var(--paper);
+  padding: 0 0.75rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.formula-display {
+  text-align: center;
+  padding: 0.5rem 0 1.75rem;
+  overflow-x: auto;
+  font-size: 1.05rem;
+}
+
+.formula-legend {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  border-top: 1px solid var(--rule);
+  padding-top: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .formula-legend { grid-template-columns: 1fr 1fr; gap: 1rem 2rem; }
+}
+
+.legend-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  font-size: 0.92rem;
+}
+
+.legend-key {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85rem;
+  color: var(--paper);
+  background: var(--ink);
+  padding: 0.1rem 0.45rem;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.legend-key.a { background: var(--highlight-a); }
+.legend-key.b { background: var(--highlight-b); }
+.legend-key.c { background: var(--highlight-c); }
+.legend-key.d { background: var(--highlight-d); }
+
+.legend-text { color: var(--ink-2); line-height: 1.5; }
+
+/* ---------- Table of contents ---------- */
+
+.toc {
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 2rem 0;
+  margin: 4rem 0 6rem;
+}
+
+.toc-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+
+.toc-list {
+  list-style: none;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.toc-item {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.toc-item:last-child { border-bottom: none; }
+
+.toc-num {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 8;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--accent);
+  font-size: 1.05rem;
+}
+
+.toc-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: 1.15rem;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.toc-title:hover { color: var(--accent-2); }
+
+.toc-note {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---------- Chapters ---------- */
+
+.chapter {
+  margin: 7rem 0 5rem;
+  scroll-margin-top: 2rem;
+}
+
+.chapter-header {
+  border-top: 3px solid var(--ink);
+  padding-top: 2rem;
+  margin-bottom: 3rem;
+}
+
+.chapter-num {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  margin-bottom: 1rem;
+}
+
+.chapter-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: clamp(2rem, 4.5vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  margin-bottom: 1.25rem;
+  font-variation-settings: "opsz" 144;
+}
+
+.chapter-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.chapter-summary {
+  font-size: 1.05rem;
+  color: var(--ink-2);
+  max-width: 62ch;
+  font-style: italic;
+}
+
+/* ---------- Sections & prose ---------- */
+
+.section { margin: 4rem 0; scroll-margin-top: 2rem; }
+
+h3.section-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: 1.6rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
+  color: var(--ink);
+  font-variation-settings: "opsz" 40;
+}
+
+.section-tag {
+  display: inline-block;
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.subsection { margin: 2.5rem 0; }
+
+h4.subsection-title {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--ink);
+  margin-bottom: 0.6rem;
+  font-variation-settings: "opsz" 20;
+}
+
+p { margin-bottom: 1.15rem; color: var(--ink-2); }
+
+p strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+p em { font-style: italic; }
+
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+/* ---------- Building blocks: intuition boxes, math, code ---------- */
+
+.intuition {
+  border-left: 2px solid var(--accent-2);
+  padding: 0.4rem 0 0.4rem 1.25rem;
+  margin: 1.5rem 0;
+  background: transparent;
+}
+
+.intuition-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+.intuition p { margin-bottom: 0; color: var(--ink-2); }
+
+.aside {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  padding: 1.25rem 1.5rem;
+  margin: 1.75rem 0;
+  font-size: 0.95rem;
+  border-radius: 2px;
+}
+
+.aside-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.aside p:last-child { margin-bottom: 0; }
+
+.math-display {
+  padding: 1.5rem 1rem;
+  margin: 1.5rem 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+  overflow-x: auto;
+  font-size: 1.05rem;
+  background: var(--paper-2);
+}
+
+.math-caption {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  margin-top: -0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.88em;
+  background: var(--paper-3);
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-ink);
+  padding: 1.25rem;
+  border-radius: 3px;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* Lists — used sparingly */
+
+ul, ol { margin: 0.75rem 0 1.5rem 1.5rem; color: var(--ink-2); }
+li { margin-bottom: 0.5rem; }
+li::marker { color: var(--muted); }
+
+/* Tables */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.93rem;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+th {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+td { color: var(--ink-2); }
+td code { font-size: 0.82rem; }
+
+/* Pull quote / big idea */
+
+.big-idea {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 144, "SOFT" 100;
+  font-style: italic;
+  font-size: 1.35rem;
+  line-height: 1.4;
+  color: var(--accent);
+  margin: 2.5rem 0;
+  padding: 0 0 0 1.5rem;
+  border-left: 2px solid var(--accent-2);
+  max-width: 60ch;
+}
+
+/* Divider */
+
+.divider {
+  text-align: center;
+  margin: 4rem 0;
+  color: var(--rule-strong);
+  font-family: "Fraunces", serif;
+  letter-spacing: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Closing */
+
+.closing {
+  margin-top: 7rem;
+  padding-top: 3rem;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+  color: var(--muted);
+  font-family: "Inter", sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+
+/* Small screens */
+
+@media (max-width: 640px) {
+  .page { padding: 3rem 1.25rem 5rem; }
+  .formula-anatomy { margin: 2rem -0.5rem; padding: 1.75rem 1.25rem 1.25rem; }
+  .toc-item { grid-template-columns: 1.5rem 1fr; }
+  .toc-note { display: none; }
+  body { font-size: 16.5px; }
+}
+</style>
+</head>
+<body>
+
+<main class="page">
+
+<!-- ======================================================= -->
+<!-- HERO                                                     -->
+<!-- ======================================================= -->
+
+<header class="hero">
+  <div class="hero-eyebrow">A study companion &middot; three chapters</div>
+
+  <h1 class="hero-title">The Retrieval Notebook: from term counts to <em>semantic search</em>.</h1>
+
+  <p class="hero-lede">
+    Every argument about RAG — vector-only versus hybrid, dense versus sparse, why re-ranking matters —
+    eventually collapses back to a small set of classical ideas. This notebook walks through those ideas
+    slowly and plainly, math included, so that by the end the arguments make sense on their own terms.
+  </p>
+
+  <!-- Signature: annotated formula -->
+  <div class="formula-anatomy">
+    <div class="formula-display">
+      \[ \text{score}(d, q) = \sum_{t \in q} \underbrace{\text{IDF}(t)}_{\color{#2E5266}\text{rarity}} \cdot \frac{\overbrace{f(t,d)}^{\color{#B8722E}\text{count}} (k_1 + 1)}{f(t,d) + \underbrace{k_1 \left(1 - b + b \cdot \tfrac{|d|}{\text{avgdl}} \right)}_{\color{#6B8E4E}\text{length penalty}}} \]
+    </div>
+
+    <div class="formula-legend">
+      <div class="legend-item">
+        <span class="legend-key d">IDF(t)</span>
+        <span class="legend-text">How rare the word is across all documents. Rare words carry more weight.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-key a">f(t,d)</span>
+        <span class="legend-text">How many times the word appears in this specific document.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-key">k&#8321;</span>
+        <span class="legend-text">A knob controlling how quickly extra occurrences stop mattering.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-key b">|d| / avgdl</span>
+        <span class="legend-text">How long this document is, compared to the average. Longer documents get pulled down.</span>
+      </div>
+    </div>
+  </div>
+
+  <p style="color: var(--muted); font-size: 0.95rem; font-style: italic; margin-top: 1.5rem;">
+    That formula is BM25. It is the workhorse of text search, and if you understand every symbol above
+    by the time we finish Chapter One, everything else in this document will feel easier.
+  </p>
+</header>
+
+<!-- ======================================================= -->
+<!-- TABLE OF CONTENTS                                        -->
+<!-- ======================================================= -->
+
+<nav class="toc">
+  <div class="toc-label">Contents</div>
+  <ol class="toc-list">
+    <li class="toc-item">
+      <span class="toc-num">i.</span>
+      <a href="#foundations" class="toc-title">Foundations of retrieval</a>
+      <span class="toc-note">TF-IDF · BM25 · dense · hybrid · MIPS</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">ii.</span>
+      <a href="#embeddings" class="toc-title">Embeddings, in depth</a>
+      <span class="toc-note">SBERT · contrastive · MRL · drift · ColBERT</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">iii.</span>
+      <a href="#documents" class="toc-title">Document processing</a>
+      <span class="toc-note">PDFs · OCR · tables · dedup · metadata</span>
+    </li>
+  </ol>
+</nav>
+
+
+<!-- ======================================================= -->
+<!-- CHAPTER 1 — FOUNDATIONS                                  -->
+<!-- ======================================================= -->
+
+<section class="chapter" id="foundations">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter One</div>
+    <h2 class="chapter-title">Foundations of <em>information retrieval</em>.</h2>
+    <p class="chapter-summary">
+      Before there was RAG, there was search. Every retrieval system, from Google circa 1998 to a modern vector
+      database, is trying to solve the same three-step problem. We start there.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 1.1 The setup ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 1.1 &nbsp;·&nbsp; the setup</span>
+    <h3 class="section-title">What is retrieval, actually?</h3>
+
+    <p>
+      Imagine you have a room with a hundred million books, and someone walks in and says: <em>&ldquo;I want to
+      read about photosynthesis in deep-sea creatures.&rdquo;</em> Your job is to hand them the ten most useful books
+      &mdash; fast. That is the whole problem of information retrieval.
+    </p>
+
+    <p>
+      Every retrieval system, no matter how sophisticated, does this in three stages:
+    </p>
+
+    <ol>
+      <li><strong>Indexing.</strong> Before anyone asks anything, you organize the books &mdash; extract text,
+      break it into pieces, build data structures that let you look things up quickly. This happens offline.</li>
+      <li><strong>Matching.</strong> When a query arrives, you narrow the hundred million down to some manageable
+      set of candidates &mdash; say, the top thousand books that might be relevant.</li>
+      <li><strong>Ranking.</strong> You reorder those candidates so the best ones come first.</li>
+    </ol>
+
+    <p>
+      A few words are worth defining precisely because they will show up everywhere. A <strong>document</strong>
+      is a single unit that can be returned &mdash; a book, an article, a paragraph, a chunk. A <strong>query</strong>
+      is what the user asked. <strong>Relevance</strong> is a judgment about how well a document answers the query.
+      <strong>Precision</strong> asks: <em>of the documents we returned, how many were actually relevant?</em>
+      <strong>Recall</strong> asks: <em>of all the relevant documents in existence, how many did we return?</em>
+      These two are usually in tension. Return everything and recall is perfect but precision is zero. Return
+      one thing and precision is likely high but recall is terrible.
+    </p>
+
+    <div class="aside">
+      <div class="aside-label">A quiet assumption</div>
+      <p>
+        Classical IR is built on the Cranfield paradigm: a document is judged relevant to a query independently
+        of what other documents are around it. That assumption is why we can rank documents by score, one at a
+        time. It is also why modern approaches like &ldquo;diversify the results&rdquo; or &ldquo;deduplicate near-duplicates&rdquo;
+        feel like patches bolted on top &mdash; because they are.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 1.2 TF-IDF ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 1.2 &nbsp;·&nbsp; the first useful score</span>
+    <h3 class="section-title">Counting words, but cleverly: TF-IDF</h3>
+
+    <p>
+      The first honest attempt at scoring documents was: <em>count how often the query words appear in each
+      document.</em> If someone searches for <code>photosynthesis</code>, prefer the document that mentions
+      photosynthesis more times. This count is called <strong>term frequency</strong>, or TF.
+    </p>
+
+    <p>
+      TF alone is not enough, and the reason is small but important. Suppose the query is <em>&ldquo;the cat sat
+      on the mat.&rdquo;</em> The word <code>the</code> appears in nearly every document ever written. Ranking by
+      raw TF would push documents heavy in <code>the</code> to the top, which is nonsense. We need to punish
+      words that appear everywhere.
+    </p>
+
+    <p>
+      This is where <strong>document frequency</strong>, or DF, comes in: it counts how many documents contain
+      a given word. <code>the</code> has a huge DF. <code>photosynthesis</code> has a tiny one. If we take
+      the reciprocal, big DF becomes a small number, and small DF becomes a big one &mdash; that is
+      <strong>inverse document frequency</strong>, IDF.
+    </p>
+
+    <p>
+      Because raw ratios grow too fast, we wrap it in a logarithm to keep the values sane:
+    </p>
+
+    <div class="math-display">\[ \text{IDF}(t) = \log\left(\frac{N}{\text{df}(t)}\right) \]</div>
+    <div class="math-caption">N is the total number of documents; df(t) is how many contain term t</div>
+
+    <p>
+      Multiply TF and IDF together and you get the classic score:
+    </p>
+
+    <div class="math-display">\[ \text{tf-idf}(t, d) = \text{tf}(t, d) \cdot \log\frac{N}{\text{df}(t)} \]</div>
+
+    <div class="intuition">
+      <span class="intuition-label">Intuition</span>
+      <p>
+        TF-IDF rewards words that are <em>frequent inside a document</em> but <em>rare across the collection</em>.
+        A word that shows up ten times in this document but almost nowhere else is a strong signal that this
+        document is about that word.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 1.3 BM25 ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 1.3 &nbsp;·&nbsp; the workhorse</span>
+    <h3 class="section-title">BM25: TF-IDF grown up</h3>
+
+    <p>
+      TF-IDF works but has two obvious flaws that anyone who has stared at real data will notice.
+    </p>
+
+    <p>
+      <strong>Flaw one: term frequency grows without limit.</strong> If <code>photosynthesis</code> appears
+      once in a document, that is meaningful. If it appears a hundred times, the document is definitely
+      about photosynthesis. But if it appears two hundred times, is that document <em>twice</em> as relevant
+      as the hundred-times one? No. There are diminishing returns &mdash; the tenth mention tells you less
+      than the second did.
+    </p>
+
+    <p>
+      <strong>Flaw two: long documents cheat.</strong> A very long document will naturally contain more
+      occurrences of any word, just by virtue of being long. Without correction, long documents dominate
+      the rankings even when they are not more focused on the topic.
+    </p>
+
+    <p>
+      BM25 &mdash; short for &ldquo;Best Matching 25,&rdquo; the 25th attempt in a research programme at
+      Cambridge in the 1990s &mdash; fixes both. It looks intimidating on first read, so let us build it
+      in pieces.
+    </p>
+
+    <h4 class="subsection-title">Piece one: saturation</h4>
+    <p>
+      Instead of using term frequency raw, wrap it in a function that flattens out:
+    </p>
+    <div class="math-display">\[ \frac{f(t,d) \cdot (k_1 + 1)}{f(t,d) + k_1} \]</div>
+    <p>
+      When \(f(t,d)\) is small, this behaves like the raw count. When \(f(t,d)\) is huge, it approaches
+      a ceiling of \(k_1 + 1\). The parameter \(k_1\), usually set between 1.2 and 2.0, controls how quickly
+      you approach that ceiling. Small \(k_1\) means the count saturates fast; large \(k_1\) means it keeps
+      growing longer.
+    </p>
+
+    <h4 class="subsection-title">Piece two: length normalisation</h4>
+    <p>
+      To handle long documents, BM25 replaces the constant \(k_1\) in the denominator with a length-aware
+      version:
+    </p>
+    <div class="math-display">\[ k_1 \cdot \left(1 - b + b \cdot \frac{|d|}{\text{avgdl}}\right) \]</div>
+    <p>
+      Here \(|d|\) is the length of this document (in words), and <code>avgdl</code> is the average document
+      length in the collection. If the document is exactly average length, the term in parentheses equals 1
+      and nothing changes. If the document is twice as long as average, the denominator grows, which shrinks
+      the score. The parameter \(b\), usually 0.75, controls how aggressively long documents get penalised.
+      Set \(b = 0\) and length is ignored entirely.
+    </p>
+
+    <h4 class="subsection-title">Piece three: put it together</h4>
+    <p>
+      Sum this across every query term, and weight each term by a slightly smoothed IDF:
+    </p>
+    <div class="math-display">\[ \text{score}(d,q) = \sum_{t \in q} \text{IDF}(t) \cdot \frac{f(t,d)(k_1 + 1)}{f(t,d) + k_1\left(1 - b + b\frac{|d|}{\text{avgdl}}\right)} \]</div>
+
+    <p>The IDF used in BM25 is slightly different from vanilla &mdash; it is smoothed to stay positive:</p>
+
+    <div class="math-display">\[ \text{IDF}(t) = \log\left(\frac{N - \text{df}(t) + 0.5}{\text{df}(t) + 0.5} + 1\right) \]</div>
+
+    <div class="intuition">
+      <span class="intuition-label">The senior-engineer note</span>
+      <p>
+        BM25 is not just &ldquo;TF-IDF with more knobs.&rdquo; It is derived from a probabilistic model of
+        text called the 2-Poisson model, which assumes there are two kinds of documents (those about the
+        query topic and those not) and models the word counts in each. The formula falls out of that model
+        with reasonable approximations. If someone in an interview tells you BM25 is just heuristic,
+        you will know they have not read Robertson.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 1.4 Dense retrieval ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 1.4 &nbsp;·&nbsp; the other approach</span>
+    <h3 class="section-title">Dense retrieval: retrieval by meaning</h3>
+
+    <p>
+      BM25 is beautiful but it has a ceiling. It matches words. If the user asks about <em>heart attack</em>
+      and the document says <em>myocardial infarction</em>, BM25 will not connect them. There is no shared
+      vocabulary.
+    </p>
+
+    <p>
+      Dense retrieval sidesteps this by turning text into vectors &mdash; long lists of numbers &mdash; where
+      similar meanings live near each other. You pass the query through a neural network and get, say, a
+      768-dimensional vector. You do the same for every document. To find matches, you ask: <em>which
+      document vector is closest to my query vector?</em>
+    </p>
+
+    <p>
+      Now &ldquo;heart attack&rdquo; and &ldquo;myocardial infarction&rdquo; end up in nearly the same place
+      in this vector space, and the retrieval works even without any shared words.
+    </p>
+
+    <p>
+      The standard architecture is a <strong>dual encoder</strong> (also called a <strong>bi-encoder</strong>):
+      one network encodes queries, another encodes documents, and you score with inner products. For symmetric
+      tasks like &ldquo;find sentences with similar meaning,&rdquo; both encoders are usually the same tower.
+      For asymmetric tasks like question-answering (short query, long passage), you sometimes train two
+      distinct towers because queries and documents look different.
+    </p>
+
+    <div class="aside">
+      <div class="aside-label">The tradeoff</div>
+      <p>
+        Dense retrieval is great at synonyms, paraphrases, and semantic drift. It is bad at exact matches:
+        product SKUs, part numbers, code identifiers, unusual names. If a user searches for
+        <code>SKU-8842-B</code>, a dense retriever will happily return documents about vaguely similar
+        SKUs. This is why serious systems combine dense and sparse.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 1.5 Sparse retrieval ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 1.5 &nbsp;·&nbsp; learned sparse</span>
+    <h3 class="section-title">Sparse retrieval isn't just BM25 anymore</h3>
+
+    <p>
+      When people say &ldquo;sparse retrieval&rdquo; they historically mean BM25 &mdash; the representation
+      of a document is a giant vector indexed by every word in the vocabulary, mostly filled with zeros,
+      with non-zero entries only for the words that actually appear.
+    </p>
+
+    <p>
+      Modern <strong>learned sparse retrievers</strong> like <strong>SPLADE</strong> and <strong>uniCOIL</strong>
+      keep the sparse structure but let a neural network decide which terms to activate. Crucially, the model
+      can activate terms that were not in the original document &mdash; a form of query and document expansion.
+      A document about &ldquo;canines&rdquo; can get its <code>dogs</code> slot activated, so a query for
+      <code>dogs</code> will find it.
+    </p>
+
+    <p>
+      You get the interpretability of BM25 (you can look at which terms are active and understand why)
+      combined with something like the semantic reach of dense retrieval.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 1.6 Hybrid ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 1.6 &nbsp;·&nbsp; hybrid retrieval</span>
+    <h3 class="section-title">Combining dense and sparse</h3>
+
+    <p>
+      Dense retrieval and BM25 fail in different ways, so combining them almost always beats either alone.
+      The question is <em>how</em> to combine.
+    </p>
+
+    <h4 class="subsection-title">Method one: Reciprocal Rank Fusion (RRF)</h4>
+    <p>
+      RRF ignores the raw scores entirely and looks only at the <em>rank</em> that each retriever gave a
+      document. If a document is 3rd according to BM25 and 5th according to the dense retriever, its RRF
+      score is:
+    </p>
+    <div class="math-display">\[ \text{score}(d) = \sum_i \frac{1}{k + \text{rank}_i(d)} \]</div>
+    <p>
+      Where \(k\) is a small constant, conventionally 60. The whole point is that BM25 scores and cosine
+      similarities live on completely different scales &mdash; BM25 might return 12.4 and 8.7, while cosine
+      returns 0.83 and 0.79. Adding those numbers directly is meaningless. Adding their reciprocal ranks
+      is scale-free and robust.
+    </p>
+
+    <h4 class="subsection-title">Method two: convex combination</h4>
+    <p>
+      Alternatively, normalise both scores to the same range and take a weighted average:
+    </p>
+    <div class="math-display">\[ \text{score}(d) = \alpha \cdot \text{score}_{\text{dense}}(d) + (1 - \alpha) \cdot \text{score}_{\text{sparse}}(d) \]</div>
+    <p>
+      Here \(\alpha \in [0, 1]\) is a tunable weight. This is more expressive than RRF &mdash; you can give
+      dense retrieval 70% weight if it is doing more work on your domain &mdash; but it is sensitive to how
+      you normalise the scores. Get the normalisation wrong and one signal drowns the other.
+    </p>
+
+    <div class="intuition">
+      <span class="intuition-label">When to reach for which</span>
+      <p>
+        RRF is the safe default. It just works. Convex combination is worth the extra effort when you have
+        an evaluation set and know exactly how much weight each retriever deserves. Most production systems
+        start with RRF and only migrate when they hit its ceiling.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 1.7 Vector similarity ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 1.7 &nbsp;·&nbsp; measuring closeness</span>
+    <h3 class="section-title">Similarity metrics, and when they agree</h3>
+
+    <p>
+      Once you have vectors, you need a way to measure how close two of them are. There are three you will
+      see, and they are related in ways that matter.
+    </p>
+
+    <h4 class="subsection-title">Cosine similarity</h4>
+    <p>Measures the angle between two vectors, ignoring their length.</p>
+    <div class="math-display">\[ \cos(A, B) = \frac{A \cdot B}{\|A\| \cdot \|B\|} \]</div>
+    <p>
+      A value of 1 means the vectors point in exactly the same direction; 0 means they are perpendicular
+      (unrelated); -1 means opposite.
+    </p>
+
+    <h4 class="subsection-title">Dot product</h4>
+    <p>Just multiply corresponding entries and sum.</p>
+    <div class="math-display">\[ A \cdot B = \sum_i A_i B_i \]</div>
+    <p>
+      Unlike cosine, dot product cares about magnitude. A vector with large numbers will produce a large
+      dot product regardless of direction. Older embedding models sometimes deliberately made confident
+      answers longer, so dot product was more informative than cosine. Modern models are usually normalised.
+    </p>
+
+    <h4 class="subsection-title">Euclidean distance (L2)</h4>
+    <p>Straight-line distance in space.</p>
+    <div class="math-display">\[ \|A - B\|_2 = \sqrt{\sum_i (A_i - B_i)^2} \]</div>
+
+    <h4 class="subsection-title">The identity that connects them</h4>
+    <p>
+      If both vectors are <strong>unit-normalised</strong> (length 1), something clean happens. Cosine
+      equals dot product, because dividing by \(\|A\| \cdot \|B\| = 1\) does nothing. And L2 distance is
+      exactly determined by cosine:
+    </p>
+    <div class="math-display">\[ \|A - B\|_2^2 = 2 - 2\cos(A, B) \]</div>
+    <p>
+      So on unit vectors, ranking by cosine, by dot product, or by inverse L2 gives you the same ordering.
+      This matters because different vector databases default to different metrics &mdash; if you normalise
+      up front, it does not matter which one you choose.
+    </p>
+
+    <div class="aside">
+      <div class="aside-label">Trap</div>
+      <p>
+        Do not mix. Do not train with cosine, index with dot product on un-normalised vectors, and expect
+        the same rankings. If magnitude carries meaning in your model, dot product is right and cosine
+        throws away signal. If magnitude is noise, normalise everything and pick whichever metric is
+        cheapest for your index.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 1.8 MIPS ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 1.8 &nbsp;·&nbsp; the search problem itself</span>
+    <h3 class="section-title">MIPS: finding the closest vector, fast</h3>
+
+    <p>
+      All of the above is scoring. But when you have ten million vectors and one query vector, how do you
+      actually find the closest ones? This is the Maximum Inner Product Search problem, MIPS for short.
+      Formally:
+    </p>
+    <div class="math-display">\[ \arg\max_{x \in X} \; q \cdot x \]</div>
+
+    <p>
+      Doing this exactly costs \(O(N \cdot d)\) &mdash; compare the query to every vector, one component at
+      a time. At ten million 768-dimensional vectors, that is billions of multiplications per query. Too
+      slow.
+    </p>
+
+    <p>
+      So we use <strong>approximate nearest neighbour</strong> (ANN) indexes. These give up perfect accuracy
+      in exchange for enormous speed. The most common are:
+    </p>
+
+    <ul>
+      <li><strong>HNSW</strong> (Hierarchical Navigable Small World): builds a multi-layer graph. Excellent
+      recall, moderate memory.</li>
+      <li><strong>IVF</strong> (Inverted File): clusters the vectors first, then only searches inside a few
+      relevant clusters at query time. Cheap, less accurate.</li>
+      <li><strong>PQ</strong> (Product Quantization): compresses vectors into short codes, sacrificing
+      precision to fit huge indexes in RAM.</li>
+    </ul>
+
+    <div class="intuition">
+      <span class="intuition-label">A subtle point</span>
+      <p>
+        HNSW was originally proved on metric spaces (spaces where distance obeys nice rules like the triangle
+        inequality). Inner product on non-normalised vectors is not a metric. If you run MIPS on non-normalised
+        vectors with an HNSW index, correctness is not guaranteed &mdash; the graph might miss the true
+        top-k. In practice most libraries handle this by normalising internally or using variants; but the
+        theoretical guarantee is worth knowing.
+      </p>
+    </div>
+
+    <p class="big-idea">
+      Retrieval is scoring plus finding. Everything else &mdash; embeddings, hybrid systems, re-ranking &mdash;
+      is just a way to make one or the other of those two things better.
+    </p>
+  </div>
+</section>
+
+
+<div class="divider">· · ·</div>
+
+
+<!-- ======================================================= -->
+<!-- CHAPTER 2 — EMBEDDINGS                                   -->
+<!-- ======================================================= -->
+
+<section class="chapter" id="embeddings">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter Two</div>
+    <h2 class="chapter-title">Embeddings, taken <em>seriously</em>.</h2>
+    <p class="chapter-summary">
+      An embedding is the whole substrate of dense retrieval. Choosing the right embedding model,
+      training it on the right data, and refreshing it at the right cadence is often the single biggest
+      lever in a RAG system after chunking.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 2.1 What is an embedding ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 2.1 &nbsp;·&nbsp; the basic object</span>
+    <h3 class="section-title">What an embedding actually is</h3>
+
+    <p>
+      An embedding is a list of numbers &mdash; typically several hundred of them &mdash; that represents a
+      piece of text. The list is produced by a neural network. The number itself has no direct meaning; the
+      meaning is in the <em>relationships between vectors</em>. Texts about similar things land near each
+      other. Texts about different things land far apart.
+    </p>
+
+    <p>
+      Think of it as a huge multi-dimensional map. &ldquo;Cat&rdquo; is at one location. &ldquo;Kitten&rdquo;
+      is nearby. &ldquo;Dog&rdquo; is a little further but still in the animals neighbourhood. &ldquo;Photosynthesis&rdquo;
+      is on the other side of the map entirely.
+    </p>
+
+    <p>
+      The map is not designed. It emerges from training. Once trained, the network is a function: text goes
+      in, a vector comes out, and semantically related texts get vectors that are close by whatever similarity
+      metric you use.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 2.2 SBERT ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 2.2 &nbsp;·&nbsp; why plain BERT is not enough</span>
+    <h3 class="section-title">Sentence-BERT and the pooling problem</h3>
+
+    <p>
+      If you already know about BERT &mdash; the original transformer that revolutionised NLP &mdash; you
+      might wonder: why not just take BERT and use its output for retrieval?
+    </p>
+
+    <p>
+      People tried. It did not work well. The reason is that BERT was trained to predict masked-out words in
+      context. Its per-token vectors encode <em>local</em> meaning: the word in the context of the sentence
+      around it. But those vectors were never optimised so that <em>whole sentence</em> representations of
+      similar sentences would be close.
+    </p>
+
+    <p>
+      A common thing to try is mean-pooling: take BERT&rsquo;s per-token vectors and average them together to
+      get one sentence vector. This does something, but similarity scores from mean-pooled BERT vectors are
+      terrible. Two sentences about completely different topics can produce mean vectors that look surprisingly
+      alike, because averaging drowns out the discriminating information.
+    </p>
+
+    <p>
+      <strong>Sentence-BERT (SBERT)</strong> fixed this. The recipe: take a pre-trained BERT, add a pooling
+      layer, then <em>fine-tune it as a Siamese network</em> on pairs of sentences labeled as similar or
+      different. Training the model with a sentence-level objective forces the sentence vectors themselves
+      to become meaningful. The lesson generalises: to get good sentence vectors, you must train with a
+      sentence-level objective.
+    </p>
+
+    <div class="aside">
+      <div class="aside-label">Modern embedders</div>
+      <p>
+        Today&rsquo;s state of the art (E5, BGE, GTE, Nomic Embed) uses the same principle but at much larger
+        scale, with more sophisticated training data and often with <em>instruction prefixes</em>. You have to
+        prepend something like <code>&quot;query: &quot;</code> or <code>&quot;passage: &quot;</code> to your text before
+        embedding, because the model was trained expecting that prefix. Forgetting to do this silently
+        degrades retrieval by 5&ndash;20% and is one of the most common footguns.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 2.3 Contrastive ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 2.3 &nbsp;·&nbsp; how embedders learn</span>
+    <h3 class="section-title">Contrastive learning and InfoNCE</h3>
+
+    <p>
+      The training signal for a modern embedder is <strong>contrastive</strong>. You show the model triples
+      like (query, correct answer, wrong answer) and ask it to pull the query and correct answer close while
+      pushing the wrong answer away. Repeat billions of times across the internet and useful geometry emerges.
+    </p>
+
+    <p>The dominant loss function is <strong>InfoNCE</strong>:</p>
+
+    <div class="math-display">\[ \mathcal{L} = -\log \frac{\exp\left(\text{sim}(q, d^+) / \tau\right)}{\sum_{i} \exp\left(\text{sim}(q, d_i) / \tau\right)} \]</div>
+
+    <p>Let us unpack it slowly.</p>
+
+    <p>
+      \(q\) is the query vector. \(d^+\) is the positive &mdash; the correct match. The \(d_i\) in the sum
+      include \(d^+\) itself along with several negatives (wrong matches). The function \(\text{sim}\) is
+      similarity, usually cosine or dot product.
+    </p>
+
+    <p>
+      Look at the shape: numerator is the score of the correct pair; denominator is the sum of scores of all
+      pairs, correct plus wrong. That is a softmax over the batch. Minimising \(\mathcal{L}\) means pushing
+      the correct pair&rsquo;s score up and the wrong pairs&rsquo; scores down.
+    </p>
+
+    <h4 class="subsection-title">The temperature knob</h4>
+    <p>
+      The \(\tau\) is <strong>temperature</strong>. It divides the similarities before the softmax. When
+      \(\tau\) is small (say 0.05), similarities get amplified &mdash; the softmax becomes sharp and the loss
+      is very sensitive to the ordering. When \(\tau\) is larger, the softmax is soft and the model treats
+      near-ties as basically ties. Small temperature trains a picky model. Large temperature trains a
+      forgiving one.
+    </p>
+
+    <h4 class="subsection-title">Where do negatives come from?</h4>
+    <p>
+      Two sources. <strong>In-batch negatives</strong> are essentially free: within a training batch of, say,
+      64 (query, positive) pairs, treat every other document in the batch as a negative for each query. This
+      gets you 63 negatives at zero extra cost.
+    </p>
+
+    <p>
+      <strong>Hard negatives</strong> are documents that are <em>almost</em> right but are actually wrong. They
+      are far more informative than random ones (a random document is obviously wrong; the model learns nothing).
+      Mining hard negatives is expensive &mdash; you usually run a first-pass retriever like BM25, take
+      documents that scored highly but were not actually relevant, and sometimes filter further with a
+      cross-encoder. It is one of the most impactful things you can do to improve an embedder.
+    </p>
+
+    <div class="intuition">
+      <span class="intuition-label">Interview-grade insight</span>
+      <p>
+        Ten hard negatives usually help more than a hundred random ones. And the specific pipeline for mining
+        them &mdash; not the choice of loss function &mdash; is often what separates a mediocre embedder from
+        a great one.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 2.4 Triplet ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 2.4 &nbsp;·&nbsp; the predecessor</span>
+    <h3 class="section-title">Triplet loss, and why it faded</h3>
+
+    <p>
+      Before InfoNCE became standard, embedders were often trained with <strong>triplet loss</strong>:
+    </p>
+
+    <div class="math-display">\[ L = \max\left(0, \; \text{sim}(a, n) - \text{sim}(a, p) + \text{margin}\right) \]</div>
+
+    <p>
+      Here \(a\) is the anchor (query), \(p\) is a positive, and \(n\) is a negative. The loss says: the
+      anchor should be closer to the positive than to the negative by at least the margin. If that gap is
+      already satisfied, the loss is zero.
+    </p>
+
+    <p>
+      The reason triplet loss faded: it only compares to <em>one</em> negative per step. InfoNCE compares to
+      <em>many</em> negatives at once, which uses each training batch far more efficiently. Same compute,
+      more signal.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 2.5 Dimensions ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 2.5 &nbsp;·&nbsp; the size question</span>
+    <h3 class="section-title">Embedding dimensions and Matryoshka</h3>
+
+    <p>
+      Bigger embeddings feel like they should be better &mdash; more numbers, more capacity to encode
+      meaning. But the honest picture is a trade-off table:
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>Dimension</th><th>Storage / 1M vectors</th><th>Latency</th><th>Quality</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>384</td><td>1.5 GB</td><td>fastest</td><td>good</td></tr>
+        <tr><td>768</td><td>3 GB</td><td>fast</td><td>strong</td></tr>
+        <tr><td>1024–1536</td><td>4–6 GB</td><td>moderate</td><td>SOTA</td></tr>
+        <tr><td>3072+</td><td>12+ GB</td><td>slow</td><td>diminishing returns</td></tr>
+      </tbody>
+    </table>
+
+    <p>
+      Once you cross about 1024 dimensions, quality gains slow down, but storage and latency keep growing
+      linearly. For most production systems, 768 or 1024 is the sweet spot.
+    </p>
+
+    <h4 class="subsection-title">Matryoshka Representation Learning (MRL)</h4>
+    <p>
+      A recent trick worth knowing: MRL trains a single embedding model such that the <em>first</em> \(k\)
+      dimensions of the output are themselves a usable embedding, for many values of \(k\). You store the
+      full 3072-dimensional vector once, and at query time you can truncate to 256 or 512 dimensions when
+      you need speed, at the cost of only modest quality loss.
+    </p>
+
+    <p>
+      The name is Russian nesting dolls: each prefix of the vector is itself a valid, smaller vector.
+      OpenAI&rsquo;s <code>text-embedding-3</code>, Nomic, and Snowflake Arctic all use MRL. This turns
+      dimension from a hard commit-once decision into a runtime knob.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 2.6 Normalization ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 2.6 &nbsp;·&nbsp; a small detail with large consequences</span>
+    <h3 class="section-title">Normalization: always be explicit</h3>
+
+    <p>
+      Normalising a vector means scaling it to length 1. It sounds like a detail. It is not.
+    </p>
+
+    <p>
+      If you are using cosine similarity, or if your vector index expects normalised inputs (many do,
+      internally), you need normalised vectors to get correct rankings. If you feed un-normalised vectors
+      into a dot-product-based index, longer vectors will score higher regardless of direction. This is
+      catastrophic if all you cared about was direction.
+    </p>
+
+    <p>
+      The rule is simple: <em>decide once, explicitly.</em> Are your vectors normalised? Then use cosine
+      or dot product interchangeably; ignore magnitudes. Are they not? Then dot product means something
+      about magnitude, and you should know what. Never let this happen by accident.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 2.7 Drift ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 2.7 &nbsp;·&nbsp; the silent killer</span>
+    <h3 class="section-title">Embedding drift, in two flavours</h3>
+
+    <h4 class="subsection-title">Model drift</h4>
+    <p>
+      You upgrade the embedding model. The old vectors and the new vectors live in <em>different spaces</em>.
+      They are not compatible. If you index some documents with the old model and some with the new one,
+      searches will return incoherent results &mdash; the geometry does not agree.
+    </p>
+
+    <p>
+      The fix is not clever. You must re-embed the entire corpus with the new model before switching. This
+      is expensive at scale (imagine 500 million documents at a few milliseconds each on a GPU) and you need
+      a rollout plan: dual-write to old and new indexes, verify quality on the new one, then cut over.
+    </p>
+
+    <h4 class="subsection-title">Distribution drift</h4>
+    <p>
+      Even without changing the model, the world changes. New products get released, new terminology emerges,
+      the query distribution shifts. The embedder was trained on data from some point in time, and its
+      accuracy on today&rsquo;s data can slowly degrade. This is silent &mdash; there is no error message.
+      Retrieval quality just goes down.
+    </p>
+
+    <p>
+      Track it. Keep an evaluation set. Re-run it monthly. Watch the numbers.
+    </p>
+
+    <div class="aside">
+      <div class="aside-label">Operational canary</div>
+      <p>
+        Also track the distribution of embedding norms over time. If it suddenly shifts, a preprocessing step
+        upstream probably broke &mdash; maybe a text cleaner is now stripping something it should not.
+        Embedding norms are a surprisingly good early warning.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 2.8 Domain adaptation ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 2.8 &nbsp;·&nbsp; making a general model your own</span>
+    <h3 class="section-title">Domain adaptation</h3>
+
+    <p>
+      Off-the-shelf embedders are trained on general internet text. Your domain &mdash; legal, medical,
+      financial, industrial &mdash; likely has vocabulary and phrasing the model has not seen well. Two ways
+      to close that gap.
+    </p>
+
+    <h4 class="subsection-title">Continued pretraining</h4>
+    <p>
+      Keep training the base model on your corpus, without any labels. Methods like <strong>TSDAE</strong>
+      (denoising autoencoder over sentence pairs) or <strong>GPL</strong> (Generative Pseudo-Labeling) let
+      you continue teaching the model in a self-supervised way. You do not need query/document pairs.
+    </p>
+
+    <h4 class="subsection-title">Contrastive fine-tuning</h4>
+    <p>
+      If you have &mdash; or can generate &mdash; pairs of (query, relevant document), fine-tune with
+      InfoNCE on those pairs. This is more direct and usually gives better results. Sources of pairs: user
+      click logs, feedback signals, synthetic pairs from an LLM (&ldquo;write a question this passage answers&rdquo;).
+    </p>
+
+    <p class="big-idea">
+      A well fine-tuned 384-dimensional embedder on your data will often beat an off-the-shelf 3072-dimensional
+      one. Data quality dominates dimension.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 2.9 Multilingual ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 2.9 &nbsp;·&nbsp; when text isn&rsquo;t English</span>
+    <h3 class="section-title">Multilingual and cross-lingual retrieval</h3>
+
+    <p>
+      Models like <strong>multilingual-E5</strong>, <strong>BGE-M3</strong>, and <strong>mE5</strong> embed
+      text from 100+ languages into a shared vector space. This unlocks two things: (a) multilingual
+      retrieval, where users query in whatever language they know and get matches in that same language;
+      and (b) <strong>cross-lingual retrieval</strong>, where an English query can retrieve French documents
+      because both encode into the same semantic space.
+    </p>
+
+    <p>
+      The catch: quality is not uniform. A multilingual model that scores well on English and Chinese may
+      be mediocre on Tamil or Swahili. The training data was not balanced across languages, and the model
+      inherits that imbalance. Always evaluate on the specific languages you care about.
+    </p>
+
+    <p>
+      Transliteration is another wrinkle. Indian languages, for example, appear in both native scripts (Devanagari,
+      Tamil script) and Latin-alphabet transliteration (&ldquo;namaste&rdquo;, &ldquo;vanakkam&rdquo;). Some
+      multilingual models handle this gracefully; others do not. Test it.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 2.10 ColBERT ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 2.10 &nbsp;·&nbsp; a different geometry</span>
+    <h3 class="section-title">Late interaction: ColBERT</h3>
+
+    <p>
+      Everything so far assumed <em>one vector per document</em>. ColBERT throws that out. It stores
+      <em>one vector per token</em>. A document with 200 tokens becomes 200 vectors.
+    </p>
+
+    <p>
+      At query time, you compute similarity through a scoring function called <strong>MaxSim</strong>:
+      for each query token, find the maximum similarity to any document token, then sum those maxima across
+      query tokens.
+    </p>
+
+    <div class="math-display">\[ \text{score}(q, d) = \sum_{i \in q} \max_{j \in d} \; \text{sim}(q_i, d_j) \]</div>
+
+    <p>
+      Why bother with all these vectors? Because it captures fine-grained matches. If your query has ten
+      tokens and only three of them matter, MaxSim will still find the document where those three tokens
+      have strong matches somewhere &mdash; even if the document is long and the matching tokens are
+      scattered.
+    </p>
+
+    <p>
+      The obvious cost is storage. ColBERT indexes are roughly 100 times larger than dual-encoder indexes.
+      Later versions &mdash; <strong>ColBERT-v2</strong> and <strong>PLAID</strong> &mdash; compress the
+      token vectors by clustering them and storing residuals against centroids, which brings the storage
+      cost way down without sacrificing much quality.
+    </p>
+
+    <div class="intuition">
+      <span class="intuition-label">Where ColBERT fits</span>
+      <p>
+        ColBERT sits between bi-encoders (fast, coarser) and cross-encoders (accurate, expensive). Retrieval
+        quality is often close to cross-encoders, at latency close to bi-encoders. It is a strong choice when
+        you need better quality than dual-encoders but cannot afford cross-encoder re-ranking on every
+        candidate.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<div class="divider">· · ·</div>
+
+
+<!-- ======================================================= -->
+<!-- CHAPTER 3 — DOCUMENT PROCESSING                          -->
+<!-- ======================================================= -->
+
+<section class="chapter" id="documents">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter Three</div>
+    <h2 class="chapter-title">Document processing, or: <em>garbage in, garbage out</em>.</h2>
+    <p class="chapter-summary">
+      The most common cause of a bad answer in a RAG system is not the model, not the embedder, and not
+      the vector database. It is that the document was mangled during ingestion. This chapter is about
+      what actually goes wrong before retrieval even begins.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 3.1 Why this matters ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 3.1 &nbsp;·&nbsp; the honest starting point</span>
+    <h3 class="section-title">Retrieval failures are usually ingestion failures</h3>
+
+    <p>
+      When someone reports that a RAG system gave a wrong answer, the instinct is to blame the retriever
+      or the LLM. In practice, most such failures trace back much earlier. The passage the model was reading
+      was already broken: a paragraph split across a page break got cut in half, a table lost its column
+      structure, a footer bled into the body text, a scanned PDF was silently text-empty and never chunked
+      at all.
+    </p>
+
+    <p>
+      A clean ingestion pipeline is not glamorous work, but it is where the largest quality wins live.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 3.2 PDF parsing ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 3.2 &nbsp;·&nbsp; the format from hell</span>
+    <h3 class="section-title">PDF parsing</h3>
+
+    <p>
+      PDF is a display format, not a document format. It describes where marks appear on a page &mdash;
+      &ldquo;the letter &lsquo;A&rsquo; at coordinate (72, 480), in Helvetica, 12pt&rdquo; &mdash; not what
+      those marks mean semantically. Extracting structured text from a PDF is fundamentally a reverse-engineering
+      task.
+    </p>
+
+    <p>Two broad approaches:</p>
+
+    <h4 class="subsection-title">Text-dump extractors</h4>
+    <p>
+      Libraries like <code>pypdf</code> pull the text stream as it exists in the PDF. Fast, cheap, and often
+      wrong for anything with layout &mdash; two-column pages will interleave columns character by character;
+      tables will come out as unreadable soup.
+    </p>
+
+    <h4 class="subsection-title">Structure-aware extractors</h4>
+    <p>
+      Libraries like <code>unstructured.io</code>, <code>PyMuPDF</code>, <code>pdfplumber</code>, and
+      commercial tools like <strong>LlamaParse</strong> and <strong>Docling</strong> try to reconstruct the
+      logical structure. They understand columns, headings, lists, tables, footnotes. They are slower
+      and more expensive, but the output is actually useful.
+    </p>
+
+    <p>
+      The right choice depends on the corpus. Simple linear reports? A text-dump extractor may be fine.
+      Financial filings, academic papers, medical documents with tables? You need structure-aware.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 3.3 OCR ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 3.3 &nbsp;·&nbsp; when text is actually pixels</span>
+    <h3 class="section-title">OCR: reading text that isn&rsquo;t really text</h3>
+
+    <p>
+      A significant fraction of real-world PDFs are scans &mdash; images of pages, with no underlying text
+      layer. You cannot extract from them because there is nothing to extract. You have to <em>read the
+      pixels</em>. That is Optical Character Recognition, OCR.
+    </p>
+
+    <p>The main choices:</p>
+
+    <ul>
+      <li><strong>Tesseract</strong>: open-source baseline. Free, reasonable for clean printed text in Latin
+      scripts. Struggles with rotated pages, non-Latin scripts, and low-quality scans.</li>
+      <li><strong>PaddleOCR</strong>: strong on Chinese, Japanese, Korean, and other non-Latin scripts.
+      Open-source.</li>
+      <li><strong>TrOCR</strong>: transformer-based OCR from Microsoft. More accurate on tricky text
+      (handwriting, unusual fonts) at higher compute cost.</li>
+      <li><strong>Commercial services</strong> like Amazon Textract, Azure Document Intelligence, and Google
+      Document AI: expensive per page, but the best available accuracy, especially for forms and hybrid
+      documents where text and structure both matter.</li>
+    </ul>
+
+    <div class="intuition">
+      <span class="intuition-label">Practical routing</span>
+      <p>
+        A sensible policy: try text-layer extraction first. If the result is empty or suspiciously short,
+        run OCR. For most documents this saves the OCR cost entirely; for scanned ones it triggers automatically.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 3.4 HTML ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 3.4 &nbsp;·&nbsp; the other messy format</span>
+    <h3 class="section-title">HTML parsing</h3>
+
+    <p>
+      Web pages are half content, half navigation and advertising. Naive HTML-to-text extraction picks up
+      the whole soup: menus, footers, cookie banners, sidebars, and the article itself all jumbled together.
+      The article is 10% of the words on the page; the other 90% is noise.
+    </p>
+
+    <p>
+      Tools like <code>trafilatura</code> and <code>readability-lxml</code> attempt to identify the main
+      content region and return only that. They use heuristics about text density, HTML structure, and link
+      ratios &mdash; the article body has lots of text and few links; the nav has few words but many links.
+    </p>
+
+    <p>
+      For JavaScript-heavy sites where content is rendered on the client, you need a headless browser like
+      <code>Playwright</code> to actually run the page before extracting.
+    </p>
+
+    <p>
+      Whatever you use, <strong>preserve semantic structure</strong>: headings, lists, tables. You will want
+      these downstream for smart chunking.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 3.5 Tables ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 3.5 &nbsp;·&nbsp; the hardest case</span>
+    <h3 class="section-title">Table extraction</h3>
+
+    <p>
+      Tables are where document parsers go to die. A table encodes information along two axes &mdash; rows
+      and columns &mdash; and a naive text extraction flattens it into one dimension. All the meaning is
+      lost.
+    </p>
+
+    <p>Approaches, roughly in order of complexity:</p>
+
+    <ul>
+      <li><strong>Camelot</strong> and <strong>Tabula</strong>: work well when the table has clear ruled lines.
+      Fail on borderless tables.</li>
+      <li><strong>TableTransformer</strong> and DETR-based models: use vision to detect table structure in
+      images. Work on unruled and image-based tables. Not perfect.</li>
+      <li><strong>LLM-based extraction</strong>: hand a table image or region to a vision-capable LLM and
+      ask for the structured output. Slow and expensive, but handles arbitrary layouts including nested cells.</li>
+    </ul>
+
+    <p>
+      Once extracted, represent tables as <strong>Markdown or CSV</strong>, not plain text. Markdown preserves
+      the row/column structure in a way both humans and language models can read.
+    </p>
+
+    <div class="aside">
+      <div class="aside-label">The rite of passage</div>
+      <p>
+        Sooner or later you will meet a merged cell inside a table inside an image inside a rotated PDF page.
+        It is not a bug in your pipeline; it is a normal document. Have a strategy: either fail gracefully
+        with a clear error, route to a more capable extractor, or flag for human review.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 3.6 Cleaning ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 3.6 &nbsp;·&nbsp; the boring but critical work</span>
+    <h3 class="section-title">Cleaning and normalisation</h3>
+
+    <p>
+      Raw extracted text is almost always dirty. Real cleaning steps include:
+    </p>
+
+    <ul>
+      <li>Stripping repeating boilerplate: headers, footers, page numbers, watermarks. If &ldquo;Confidential
+      &mdash; Q4 2024&rdquo; appears on every page, it should not be repeated in every chunk.</li>
+      <li>Normalising whitespace: replace runs of spaces and newlines with single ones, remove trailing
+      whitespace.</li>
+      <li>Unicode normalisation to NFC form &mdash; the same character can be encoded multiple ways in
+      Unicode, and you want them collapsed to a canonical form so string matching works.</li>
+      <li>Normalising typography: curly quotes to straight, em-dashes to hyphens if you need consistency,
+      ligatures unpacked.</li>
+    </ul>
+
+    <p>
+      None of this is exciting. All of it changes retrieval quality noticeably.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 3.7 Dedup ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 3.7 &nbsp;·&nbsp; removing the copies</span>
+    <h3 class="section-title">Deduplication, in three tiers</h3>
+
+    <p>
+      Real corpora are full of near-copies. The same document is uploaded twice. A press release appears
+      on five sites. A template email is repeated across a thousand messages. If you leave them in, the
+      retriever returns the same information ten times and the LLM writes an answer based on ten repetitions
+      of one thing.
+    </p>
+
+    <h4 class="subsection-title">Exact deduplication</h4>
+    <p>
+      Hash each document (SHA-256 is fine), and drop repeats. Fast, cheap, catches exact duplicates only.
+      One trailing whitespace character defeats it.
+    </p>
+
+    <h4 class="subsection-title">Near-duplicate detection</h4>
+    <p>
+      For documents that are almost the same &mdash; different footers, whitespace, minor edits &mdash;
+      use <strong>MinHash</strong> combined with <strong>Locality-Sensitive Hashing (LSH)</strong>. MinHash
+      gives you a signature of each document&rsquo;s content, and LSH lets you find similar signatures
+      efficiently across billions of documents. It is the industry-standard method for this.
+    </p>
+
+    <h4 class="subsection-title">Semantic deduplication</h4>
+    <p>
+      Embed each document, and drop pairs with very high similarity (say, cosine &gt; 0.95). Catches
+      paraphrases and translations of the same content. Expensive at scale.
+    </p>
+
+    <p class="big-idea">
+      At corpus scale, near-duplicate removal improves retrieval quality more than any embedding-model
+      upgrade. It is the highest-value change most teams have never made.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 3.8 Metadata ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 3.8 &nbsp;·&nbsp; the invisible half</span>
+    <h3 class="section-title">Metadata is retrieval infrastructure</h3>
+
+    <p>
+      A chunk of text without metadata is a floating fact. A chunk with metadata &mdash; author, date,
+      document type, source URL, access permissions, tags &mdash; can be filtered, audited, and trusted.
+    </p>
+
+    <p>What metadata to always capture:</p>
+
+    <ul>
+      <li><strong>Provenance</strong>: source URL or file path, ingestion timestamp, parser version.</li>
+      <li><strong>Content</strong>: title, author, publication date, document type.</li>
+      <li><strong>Access</strong>: who is allowed to see this? Group memberships, ACLs, sensitivity level.</li>
+      <li><strong>Structure</strong>: which section of which document this chunk came from.</li>
+    </ul>
+
+    <p>
+      Filterable metadata makes queries like &ldquo;find me policy documents from 2024 that I am allowed
+      to read&rdquo; possible. Without it, you retrieve blindly and hope.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 3.9 Hierarchies ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 3.9 &nbsp;·&nbsp; preserving the shape</span>
+    <h3 class="section-title">Document hierarchies</h3>
+
+    <p>
+      Documents are not flat. A book has chapters, sections, subsections, paragraphs, sentences. When you
+      chunk a document you break it up, but you can preserve the hierarchy: store the tree
+      <code>document → section → paragraph → chunk</code>, and give every chunk a reference back up the
+      tree.
+    </p>
+
+    <p>
+      Why bother? It unlocks <strong>parent-child retrieval</strong>: retrieve at the fine-grained chunk
+      level for precision, then expand the answer using the parent section for context. The model sees not
+      just the matching sentence but the paragraph it lived in.
+    </p>
+
+    <p>
+      Preserving section headings is the minimum. If you throw away structural information at parse time,
+      you cannot get it back.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 3.10 Production reality ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 3.10 &nbsp;·&nbsp; what actually happens</span>
+    <h3 class="section-title">Production is stranger than you think</h3>
+
+    <p>
+      Every idealised pipeline meets reality and cracks. Some of the things you will actually encounter:
+    </p>
+
+    <ul>
+      <li>About 10% of PDFs will be scans with no text layer. About 5% will have rotated pages, mixed
+      languages, or embedded fonts that break extraction.</li>
+      <li>Enterprises will send you <code>.msg</code> (Outlook emails), <code>.eml</code>, <code>.pptx</code>,
+      old <code>.doc</code> files (not <code>.docx</code>), inside password-protected zips, inside SharePoint
+      libraries with weird permission models.</li>
+      <li>Tables inside merged cells inside images inside PDFs. It is not exotic; it is a Tuesday.</li>
+    </ul>
+
+    <p>Three practices that pay off, always:</p>
+
+    <ol>
+      <li><strong>Separate storage layers with lineage</strong>: raw bytes, parsed text, chunks, embeddings,
+      each with IDs that link back up the chain. When your chunker changes, you re-chunk from parsed text
+      &mdash; you do not re-parse from raw.</li>
+      <li><strong>Version every step</strong>: parser version, chunker version, embedder version. Attach
+      them to each chunk as metadata. When you see a bad answer, you can trace exactly which parser produced
+      it.</li>
+      <li><strong>Log parse-failure rates by source</strong>: it is the canary. When a source suddenly starts
+      failing, something changed upstream &mdash; a new file format, a corrupted upload pipeline, a scanned
+      batch. You catch it early.</li>
+    </ol>
+
+    <div class="intuition">
+      <span class="intuition-label">The debugging playbook</span>
+      <p>
+        When a user reports a wrong answer, walk the pipeline backwards: check the generation, then the
+        retrieved chunks, then the chunker, then the parser, then the raw file. Nine times out of ten the
+        problem is upstream of the retriever. The tenth time is the interesting one.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ======================================================= -->
+<!-- CLOSING                                                  -->
+<!-- ======================================================= -->
+
+<div class="closing">
+  End of the notebook &nbsp;·&nbsp; three chapters &nbsp;·&nbsp; keep going
+</div>
+
+</main>
+
+</body>
+</html>
