@@ -1638,3 +1638,74 @@ def relu_neetcode(self, z: NDArray[np.float64]) -> NDArray[np.float64]:
 #     margin violators, LR uses every point.
 #
 # =============================================================================
+
+
+
+# =============================================================================
+# MULTI HEAD SELF ATTENTION
+# =============================================================================
+
+class MultiHeadSelfAttention:
+
+    def __init__(self, d_model : int, num_heads: int):
+
+        assert d_model % num_heads == 0
+
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
+
+        self.scale = np.sqrt(d_k)
+
+        self.Wq = np.random.randn(d_model, d_model) / self.scale
+        self.Wk = np.random.randn(d_model, d_model) / self.scale
+        self.Wv = np.random.randn(d_model, d_model) / self.scale
+        self.Wo = np.random.randn(d_model, d_model) / self.scale
+
+
+    def softmax(self, x):
+        np_exp = np.exp(x - np.max(x, axis=-1, keepdims=True))
+        return np_exp / np.sum(np_exp, axis=-1, keepdims=True)
+
+
+    def split(self, X):
+
+        B, L, _ = X.shape
+
+        x = X.reshape(B, L, self.num_heads, self.d_k)
+        x = np.transpose(x, (0, 2, 1, 3))
+        return x
+
+    def combine(self, X):
+        B, L, H, d_k = X.shape
+        x = np.transpose(X, (0, 2, 1, 3))
+        x = x.reshape(B, L, H * d_k)
+        return x
+
+    def scaled_self_attention(self, Q, K, V):
+        scores = np.matmul(Q, K.transpose(0, 1, 3, 2))
+        scores /= np.sqrt(self.d_k)
+
+        weights = self.softmax(scores)
+
+        output = np.matmul(weights, V)
+        return output
+
+    def forward(self, X):
+        Q = X @ self.Wq
+        K = X @ self.Wk
+        V = X @ self.Wv
+
+        Q = self.split(Q)
+        K = self.split(K)
+        V = self.split(V)
+
+        attention = self.scaled_self_attention(Q, K, V)
+
+        concat = self.combine(attention)
+
+        output = np.matmul(concat, self.Wo)
+
+        return output
+
+
