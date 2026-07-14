@@ -1709,3 +1709,29 @@ class MultiHeadSelfAttention:
         return output
 
 
+
+
+
+# =============================================================================
+# SINUSODIAL POSITIONAL ENCODING
+# =============================================================================
+
+import numpy as np
+
+
+def positional_encoding(max_seq_len: int, d_model: int):
+    pe = np.zeros((max_seq_len, d_model))
+    for pos in range(max_seq_len):
+        for i in range(0, d_model, 2):
+            denominator = 10000 ** (i / d_model)
+            pe[pos, i] = np.sin(pos / denominator)
+            if i + 1 < max_seq_len:
+                pe[pos, i + 1] = np.cos(pos / denominator)
+    return pe
+
+pe = positional_encoding(
+    max_seq_len=5,
+    d_model=8
+)
+print(np.round(pe, 4))
+
