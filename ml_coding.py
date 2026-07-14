@@ -1735,3 +1735,105 @@ pe = positional_encoding(
 )
 print(np.round(pe, 4))
 
+
+# =============================================================================
+# LEARNED POSITIONAL EMBEDDINGS
+# =============================================================================
+import torch
+import torch.nn as nn
+
+
+class LearnedPositionalEmbedding(nn.Module):
+
+    def __init__(self, max_seq_len, d_model):
+        self.max_seq_len = max_seq_len
+        self.d_model = d_model
+
+        self.positional_embedding = nn.Embedding(
+            num_embedding = self.max_seq_len,
+            embedding_dim = d_model
+        )
+
+    def forward(self, x):
+        batch_size, seq_len, _ = x.shape
+        positions = torch.arange(seq_len, device=x.shape)
+        position_embedding = self.positional_embedding(positions)
+        position_embedding = position_embedding.unsqueeze(0)
+        return x + position_embedding
+
+########################################################################
+# Example
+########################################################################
+
+batch_size = 2
+seq_len = 5
+d_model = 8
+
+word_embeddings = torch.randn(batch_size, seq_len, d_model)
+
+pe = LearnedPositionalEmbedding(
+    max_seq_len=512,
+    d_model=d_model
+)
+
+output = pe(word_embeddings)
+
+print("Input Shape :", word_embeddings.shape)
+print("Output Shape:", output.shape)
+
+
+
+# =============================================================================
+# CORE IDEA OF ROPE EMBEDDINGS
+# =============================================================================
+
+def rotate_pairs(x, y, theta):
+
+    new_x = x * np.cos(theta) - y * np.sin(theta)
+    new_y = x * np.sin(theta) + y * np.cos(theta)
+
+    return new_x, new_y
+
+embeddings = [1, 2, 3, 4, 5, 6, 7, 8]
+
+theta = 1.0
+
+rotated = []
+
+for i in range(0, len(embeddings), 2):
+
+    x = embeddings[i]
+    y = embeddings[i + 1]
+
+    new_x, new_y = rotate_pairs(x, y, theta)
+
+    rotated.append([new_x, new_y])
+
+
+
+# =============================================================================
+# ROPE EMBEDDINGS ACTUAL
+# =============================================================================
+def rope(embedding, position):
+
+    embedding = np.embedding(embedding)
+    d = len(embedding)
+    output = np.zeros_like(embedding)
+
+    for dim in range(0, d, 2):
+        denominator = 10000 * (dim / d)
+
+        theta = position / denominator
+
+        x = embedding[dim]
+        y = embedding[dim + 1]
+
+        output[dim] = x * np.cos(theta) - y * np.sin(theta)
+        output[dim + 1] = x * np.sin(theta) + y * np.cos(theta)
+
+    return output
+
+
+embedding = [1,2,3,4,5,6,7,8]
+
+print(rope(embedding, position=5))
