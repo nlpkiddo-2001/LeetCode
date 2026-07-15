@@ -720,7 +720,7 @@ def minWindow(s: str, t: str) -> str:
 
 
 #####################################################################################################################################################################################################################
-def isValid(self, s: str) -> bool:
+def isValid(s: str) -> bool:
     stack = []
     closeToOpen = {"}" : "{",  ")" : "(",  "]" : "["}
 
@@ -1044,7 +1044,6 @@ def search_rotated_sorted_array(nums: List[int], target: int):
 
     return -1
 
-
 def maxSlidingWindow(nums: List[int], k: int):
     l = r = 0
     output = []
@@ -1187,6 +1186,9 @@ def decodeString(s: str):
 
     return current_string
 
+
+
+
 s = "3[a]2[bc]"
 
 # print(decodeString(s))
@@ -1214,7 +1216,7 @@ def decodeStringWithoutSquareBrackets(s: str):
     return result
 
 
-def findMin(self, nums: List[int]) -> int:
+def findMin(nums: List[int]) -> int:
     l, r = 0, len(nums) - 1
 
     while l < r:
@@ -1227,8 +1229,6 @@ def findMin(self, nums: List[int]) -> int:
             r = mid
 
     return nums[l]
-
-
 
 class ListNode:
     def __init__(self, val=0, next=None):
@@ -1244,7 +1244,6 @@ def reverseList(head: Optional[ListNode]) -> Optional[ListNode]:
         prev = curr
         curr = next_node
     return prev
-
 
 def mergeTwoLists(list1: Optional[ListNode], list2: Optional[ListNode]) -> Optional[ListNode]:
     dummy = ListNode()

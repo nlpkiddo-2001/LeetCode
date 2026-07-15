@@ -1837,3 +1837,51 @@ def rope(embedding, position):
 embedding = [1,2,3,4,5,6,7,8]
 
 print(rope(embedding, position=5))
+
+
+# =============================================================================
+# SAMPLE BACKWARD PASS
+# =============================================================================
+def backward(x: NDArray[np.float64], w: NDArray[np.float64], b: float, y_true: float) -> Tuple[
+    NDArray[np.float64], float]:
+    # x: 1D input array
+    # w: 1D weight array
+    # b: scalar bias
+    # y_true: true target value
+    #
+    # Forward: z = dot(x, w) + b, y_hat = sigmoid(z)
+    # Loss: L = 0.5 * (y_hat - y_true)^2
+    # Return: (dL_dw rounded to 5 decimals, dL_db rounded to 5 decimals)
+
+    z = np.dot(x, w) + b
+    y_hat = 1 / (1 + np.exp(-z))
+
+    dL_dy = y_hat - y_true
+    dy_dz = y_hat * (1 - y_hat)
+    dL_dz = dL_dy * dy_dz
+
+    dL_dW = dL_dz * x
+    dL_dB = dL_dz
+
+    dL_dW = np.round(dL_dW, 5)
+    dL_dB = round(float(dL_dB), 5)
+
+    return dL_dW, dL_dB
+
+
+# =============================================================================
+# LAYER NORM
+# =============================================================================
+
+class LayerNorm:
+    def __init__(self, num_features, eps=1e-4):
+        self.num_features = num_features
+        self.eps = eps
+        self.gamma=np.ones(self.num_features)
+        self.beta=np.zeros(self.num_features)
+    def forward(self, x):
+        mean=np.mean(x, axis=1, keepdims=True)
+        var=np.var(x, axis=1, keepdims=True)
+        x_mean = (x - mean) / np.sqrt(var + self.eps)
+        out = self.gamma * x_mean + self.beta
+        return out
