@@ -1885,3 +1885,89 @@ class LayerNorm:
         x_mean = (x - mean) / np.sqrt(var + self.eps)
         out = self.gamma * x_mean + self.beta
         return out
+
+
+# =============================================================================
+# DROPOUT
+# =============================================================================
+
+class Dropout:
+
+    def __init__(self, p: float = 0.5):
+        self.p = p
+        self.mask = None
+
+    def forward(self, x, training):
+        if not training:
+            return x
+
+        keep_prob = 1 - self.p
+
+        self.mask = (np.random.rand(*x.shape) < keep_prob)
+
+        return x * self.mask / keep_prob
+
+    def backward(self, grad_output):
+        keep_prob = 1 - self.p
+
+        return grad_output * self.mask / keep_prob
+
+
+# =============================================================================
+# FORWARD & BACKWARD
+# =============================================================================
+
+class Solution:
+    def forward_and_backward(self,
+                              x: List[float],
+                              W1: List[List[float]], b1: List[float],
+                              W2: List[List[float]], b2: List[float],
+                              y_true: List[float]) -> dict:
+        # Architecture: x -> Linear(W1, b1) -> ReLU -> Linear(W2, b2) -> predictions
+        # Loss: MSE = mean((predictions - y_true)^2)
+        #
+        # Return dict with keys:
+        #   'loss':  float (MSE loss, rounded to 4 decimals)
+        #   'dW1':   2D list (gradient w.r.t. W1, rounded to 4 decimals)
+        #   'db1':   1D list (gradient w.r.t. b1, rounded to 4 decimals)
+        #   'dW2':   2D list (gradient w.r.t. W2, rounded to 4 decimals)
+        #   'db2':   1D list (gradient w.r.t. b2, rounded to 4 decimals)
+        x = np.array(x, dtype=np.float64)
+        W1 = np.array(W1, dtype=np.float64)
+        W2 = np.array(W2, dtype=np.float64)
+        b1 = np.array(b1, dtype=np.float64)
+        b2 = np.array(b2, dtype=np.float64)
+
+        y_true=np.array(y_true, dtype=np.float64)
+
+        z1 = x @ W1 + b1
+
+        a1 = np.maximum(0, z1)
+
+        y_pred = z1 @ W2 + b2
+
+        error = y_pred - y_true
+
+        loss = np.mean(error ** 2)
+
+
+        dz2 = (2 / n) * (y_pred - y_true)
+
+        dW2 = np.outer(a1 , dz2)
+        dB2 = dz2
+
+        da1 = dz2 @ W2.T
+
+        dz1 = da1 * (z1 > 0)
+
+        dW1 = np.outer(x, dz1 )
+        dB1 = dz1
+
+        return {
+            "loss": round(float(loss), 4),
+            "dW1": np.round(dW1, 4).tolist(),
+            "db1": np.round(dB1, 4).tolist(),
+            "dW2": np.round(dW2, 4).tolist(),
+            "db2": np.round(dB2, 4).tolist(),
+        }
+

@@ -1325,10 +1325,9 @@ def removeNthFromEnd(head: Optional[ListNode], n: int) -> Optional[ListNode]:
 
     return dummy.next
 
-
 import heapq
 
-def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:
+def mergeKLists(lists: List[Optional[ListNode]]) -> Optional[ListNode]:
     heap = []
     counter = 0
 
@@ -1352,7 +1351,6 @@ def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:
             counter += 1
 
     return dummy.next
-
 
 from collections import deque
 from typing import Optional, List, Any
@@ -1436,9 +1434,6 @@ def maxDepth(root: Optional[TreeNode]) -> int:
 
     return 1 + max(left_depth, right_depth)
 
-
-
-
 def isSameTree(p: Optional[TreeNode], q: Optional[TreeNode]) -> bool:
     """
     PATTERN: "Twin Checker" - Compare structure AND values
@@ -1492,8 +1487,6 @@ def isSubTree(root: Optional[TreeNode], subRoot: Optional[TreeNode]) -> bool:
     return isSubTree(root.left, subRoot) or isSubTree(root.right, subRoot)
 
 
-
-
 def lowestCommonAncestor(root: TreeNode, p: TreeNode, q: TreeNode) -> TreeNode:
     """
     PATTERN: "BST Split Point" - Use BST property to navigate
@@ -1522,8 +1515,6 @@ def lowestCommonAncestor(root: TreeNode, p: TreeNode, q: TreeNode) -> TreeNode:
 
         else:
             return curr
-
-
 
 
 def levelOrder(root: Optional[TreeNode]) -> List[List[int]]:
@@ -1561,7 +1552,6 @@ def levelOrder(root: Optional[TreeNode]) -> List[List[int]]:
         if level:
             res.append(level)
     return res
-
 
 
 
