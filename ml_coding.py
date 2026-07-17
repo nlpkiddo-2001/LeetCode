@@ -1971,3 +1971,100 @@ class Solution:
             "db2": np.round(dB2, 4).tolist(),
         }
 
+
+# =============================================================================
+# MLP FROM SCRATCH
+# =============================================================================
+
+class Solution:
+    def forward(self, x: NDArray[np.float64], weights: List[NDArray[np.float64]], biases: List[NDArray[np.float64]]) -> \
+    NDArray[np.float64]:
+        # x: 1D input array
+        # weights: list of 2D weight matrices
+        # biases: list of 1D bias vectors
+        # Apply ReLU after each hidden layer, no activation on output layer
+        # return np.round(your_answer, 5)
+
+        h = x
+
+        for i in range(len(weights)):
+
+            h = np.dot(h, weights[i]) + biases[i]
+
+            if i != len(weights) - 1:
+                h = np.maximum(0, h)
+
+        return np.round(h, 5)
+
+
+# =============================================================================
+# OPTIMIZERS FROM SCRATCH
+# =============================================================================
+class SGD:
+
+    def __init__(self, lr):
+        self.lr = lr
+
+    def step(self, weights, gradients):
+        return weights - self.lr * gradients
+
+
+class Momentum:
+
+    def __init__(self, lr, beta):
+        self.lr = lr
+        self.beta = beta
+
+
+    def step(self, weights, gradients, velocity):
+        velocity = self.beta * velocity + (1 - self.beta) * gradients
+        return weights - self.lr * velocity
+
+
+class RMSProp:
+
+    def __init__(self, lr, beta, eps):
+        self.lr = lr
+        self.beta = beta
+        self.eps = eps
+
+    def step(self, weights, gradients, square_avg):
+        square_avg = beta * square_avg + (1 - beta) * gradients ** 2
+        return weights - self.lr * gradients / np.sqrt(square_avg) + self.eps
+
+
+class Adam:
+
+    def __init__(self, lr, beta1, beta2, eps):
+        self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.eps = eps
+
+        self.m = None
+        self.v = None
+        self.t = 0
+
+    def step(self, weights, grads):
+        if self.m is None:
+            self.m = np.zeros_like(weights)
+            self.v = np.zeros_like(weights)
+
+        self.t += 1
+
+        self.m = self.beta1 * self.m + (1 - self.beta1) * grads
+        self.v = self.beta2 * self.v + (1 - self.beta2) * grads ** 2
+
+        m_hat = self.m / (1 - self.beta1 ** self.t)
+        v_hat = self.v / (1 - self.beta2 ** self.t)
+
+        weights -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
+
+        return weights
+
+
+
+
+
+
+
