@@ -1588,7 +1588,6 @@ def isValidBST(root: Optional[TreeNode]) -> bool:
 
 
 
-
 def kthSmallest(root: Optional[TreeNode], k: int) -> int:
     """
     PATTERN: "In-Order Counting" - BST in-order gives sorted sequence
@@ -1629,7 +1628,6 @@ def kthSmallest(root: Optional[TreeNode], k: int) -> int:
 
 
 
-
 def buildTree(preorder: List[int], inorder: List[int]) -> Optional[TreeNode]:
     """
     PATTERN: "Preorder Root + Inorder Split" - Use preorder root to split inorder
@@ -1657,7 +1655,6 @@ def buildTree(preorder: List[int], inorder: List[int]) -> Optional[TreeNode]:
     root.right = buildTree(preorder[mid + 1:], inorder[mid + 1:])
 
     return root
-
 
 
 
@@ -1696,7 +1693,6 @@ def maxPathSum(root: Optional[TreeNode]) -> int:
 
     dfs(root)
     return maxSum
-
 
 
 

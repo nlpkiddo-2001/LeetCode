@@ -2064,6 +2064,70 @@ class Adam:
 
 
 
+"""
+LLM inference (this will be the deepest technical drill given your resume):
+
+Walk through the vLLM request lifecycle end-to-end. Where does PagedAttention sit, and what happens under memory pressure with a batch of 32 requests generating 8K tokens each?
+MTP: what's the actual mechanism, and where does the speedup come from? When does MTP hurt quality? How do you benchmark acceptance rate vs raw throughput?
+Given a 105B MoE with ~10B active on 8×H100 — how do you decide tp/pp/ep/dp? Now the traffic pattern flips from long-context batch inference to bursty single-user voice — what changes?
+TURBOQUANT vs FP8 vs INT8-W8A8 vs INT4-W4A16: pick one for a voice agent with a 300ms TTFT budget and defend it.
+What's your TTFT vs TPOT vs throughput SLA for a voice agent, and why do those three tradeoff?
+
+Voice pipeline (this is where they'll compare you against the VAD hackathon bar):
+
+Design a real-time voice agent for a code-mixed Hindi–English support call. Perceived latency budget: 800ms per turn. Walk through every component and where you'd spend your latency budget.
+How does your VAD work? Silero? WebRTC energy-based? A custom CNN? What's the false-positive vs false-negative tradeoff, and why does it matter more for interruption than for turn detection?
+Barge-in: when the user interrupts mid-TTS, what state do you throw away, what do you keep, and how do you avoid the LLM re-generating from a stale context?
+Streaming STT chunk size: too small kills accuracy, too large kills latency. What's your strategy for endpointing?
+
+Pretraining project (this is a huge signal — Sarvam pretrained their own models from scratch):
+
+What loss curves did you observe? At what token count did learning "kick in"?
+Why Muon over AdamW? What's the update-rule difference, and what did you actually measure?
+WSD vs cosine — when did each win?
+BF16 vs FP16 for training — why is BF16 the default now?
+If I gave you 1024 H100s for 3 weeks, what would you train, and what data mix?
+
+Indic / multilingual — this is your biggest gap, prep hard here:
+Your resume mentions "multilingual fine-tuning" but doesn't specifically call out Indic work. Sarvam is 100% about Indian languages. Expect:
+
+Tokenizer design for Tamil or Hindi — what breaks with a standard BPE trained on English-heavy corpora? Fertility ratio, script fragmentation, why matter?
+How would you evaluate a Hindi TTS? MOS is expensive — what proxies?
+Code-mixed Hinglish input — what changes across STT, LLM, and TTS?
+If you'd never worked on this, be honest and reason from first principles — they respect that far more than bluffing.
+
+NL-to-SQL:
+
+How does sqlglot catch hallucinations, and what can it not catch? (Semantic joins on wrong keys, for instance.)
+Schema retrieval for 1000+ tables — embed-and-rerank, or something structural?
+How do you eval? Spider is easy; production schemas aren't. Build me a golden set.
+
+System design (very likely):
+
+Design training infrastructure for a 30B MoE on 1024 H100s. Cover data pipeline, checkpointing cadence, failure recovery, and how you'd detect a silently corrupted node.
+Design serving for 10k concurrent voice sessions with a 500ms per-turn budget.
+
+Behavioral / builder-taste:
+
+Why leave Zoho? Why Sarvam specifically? (Have a real answer, not just "Indic AI is exciting.")
+Hardest bug you shipped a fix for, and what you learned about your own blind spots.
+An AI product you use and think is overrated — and one that's underrated.
+If we gave you a month and $10K of compute, what would you build?
+
+The 1-hour / 2.5-hour task — likely shapes
+Given your profile, plausible variants:
+
+Build a streaming VAD or endpoint detector from scratch (Silero-adjacent), with a small eval harness
+Fine-tune a small model for a Hindi/Tamil classification task, submit code + numbers
+Take a broken RAG or NL-to-SQL system and debug it under time pressure
+Implement a small paper: speculative decoding proof-of-concept, or a mini-MTP head
+
+For all of these, they care about: clean code, sensible defaults, honest evaluation, and a README that says what you tried and what didn't work.
+
+
+"""
+
+
 
 
 
