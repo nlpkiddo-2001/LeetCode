@@ -429,7 +429,7 @@ fail:'Recomputing max(count.values()) every step is O(26\u00b7n). For strict O(n
 
 {n:'Minimum Window Substring',cx:'O(n)',trig:'"smallest substring of s containing all chars of t (with duplicates)"',ex:'s="ADOBECODEBANC" t="ABC" \u2192 "BANC"',key:'Two phases: expand until have==need, then shrink to minimize while still valid.',steps:['countT, have=0, need=len(countT)','Expand r, update window + have','While have==need: record if smaller, shrink l','Drop have only when a needed char goes below its count'],trap:'Only decrement have when a REQUIRED char drops below its needed count.',
 code:`def minWindow(s, t):
-    if not t: return ""
+    if not t: return <span className="s">""</span>
     countT = {}
     for c in t:
         countT[c] = 1 + countT.get(c, 0)
