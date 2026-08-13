@@ -37,7 +37,7 @@ WHAT THE L4 MLE LOOP ACTUALLY LOOKS LIKE (read this first)
 # PART G — GREEDY / ASSIGNMENT / SCHEDULING  (your #1 lives here)
 # =============================================================================
 
-def g1_assign_students_to_apartments():
+def g1_assign_students_to_apartments(students, apartments):
     """
     G1. Assign Students to Apartments (share vs. private)   <-- YOUR ROOM QUESTION
     Difficulty: Medium
@@ -54,6 +54,35 @@ def g1_assign_students_to_apartments():
     Follow-ups: Minimize number of buildings used; add per-student cost; make it
       an assignment/flow problem if preferences get weighted.
     """
+
+    apartments.sort()
+
+    privacy = []
+    share = []
+
+    for student in students:
+        if student == "privacy":
+            privacy.append(student)
+        else:
+            share.append(student)
+
+    assign = []
+
+    index = 0
+
+    for student in privacy:
+        if index < len(apartments):
+            assign.append((student, apartments[index]))
+        index += 1
+
+    for student in share:
+        if index < len(apartments):
+            assign.append((student, apartments[index]))
+
+        index += 1
+
+    return assign
+
 
 
 def g2_meeting_scheduling():
