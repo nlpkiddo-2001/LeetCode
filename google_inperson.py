@@ -54,7 +54,7 @@ def g1_assign_students_to_apartments(students, apartments):
     Follow-ups: Minimize number of buildings used; add per-student cost; make it
       an assignment/flow problem if preferences get weighted.
     """
-
+    
     apartments.sort()
 
     privacy = []

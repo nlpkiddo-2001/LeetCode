@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Infra Interview Prep — Vipin Saravana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eaeef4; --surface:#ffffff; --surface2:#f6f8fb;
+    --ink:#0f1720; --muted:#5a6373; --faint:#8b93a1;
+    --line:#dce2ec; --line2:#eef2f7;
+    --accent:#0e7490; --accent-ink:#0e7490; --accent-soft:#e0f2f7;
+    --amber:#b45309; --amber-soft:#fbf1e3;
+    --navy:#0c2233;
+    --shadow:0 1px 2px rgba(15,23,32,.05),0 8px 24px rgba(15,23,32,.06);
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:"Space Grotesk",-apple-system,system-ui,sans-serif;
+    --body:"Inter",-apple-system,system-ui,sans-serif;
+  }
+  html[data-theme="dark"]{
+    --bg:#0a1019; --surface:#111a27; --surface2:#0e1622;
+    --ink:#e7eef7; --muted:#93a0b2; --faint:#6b7889;
+    --line:#213146; --line2:#182234;
+    --accent:#22d3ee; --accent-ink:#5fe3f5; --accent-soft:#0c2c36;
+    --amber:#f0a95a; --amber-soft:#2c2113;
+    --navy:#0a1622;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--body);line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent-soft);color:var(--accent-ink)}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    background:var(--navy);color:#dfe8f0;padding:34px 22px 30px;
+    position:relative;overflow:hidden;
+  }
+  .hero::before{
+    content:"";position:absolute;inset:0;opacity:.5;
+    background:
+      repeating-linear-gradient(90deg,transparent 0 38px,rgba(255,255,255,.03) 38px 39px),
+      radial-gradient(600px 200px at 82% -10%,rgba(34,211,238,.16),transparent);
+    pointer-events:none;
+  }
+  .hero-in{max-width:960px;margin:0 auto;position:relative}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+    text-transform:uppercase;color:#5fe3f5;margin:0 0 10px;
+  }
+  .hero h1{
+    font-family:var(--disp);font-weight:700;font-size:clamp(26px,5vw,40px);
+    line-height:1.08;margin:0 0 6px;letter-spacing:-.01em;color:#fff;
+  }
+  .hero .sub{color:#9fb1c2;font-size:15px;margin:0 0 22px;max-width:640px}
+  .hero .sub b{color:#dfe8f0;font-weight:600}
+  .gauges{display:flex;flex-wrap:wrap;gap:10px}
+  .gauge{
+    background:rgba(255,255,255,.04);border:1px solid rgba(95,227,245,.22);
+    border-radius:10px;padding:9px 13px;min-width:112px;
+  }
+  .gauge .num{font-family:var(--mono);font-weight:600;font-size:18px;color:#5fe3f5}
+  .gauge .lbl{font-size:10.5px;letter-spacing:.04em;color:#8ea3b6;text-transform:uppercase;margin-top:2px}
+
+  /* ---------- CONTROLS ---------- */
+  .controls{
+    position:sticky;top:0;z-index:30;background:var(--surface);
+    border-bottom:1px solid var(--line);box-shadow:0 1px 0 var(--line);
+  }
+  .controls-in{max-width:960px;margin:0 auto;padding:12px 22px}
+  .searchrow{display:flex;gap:10px;align-items:center}
+  .search{
+    flex:1;display:flex;align-items:center;gap:9px;background:var(--surface2);
+    border:1px solid var(--line);border-radius:10px;padding:9px 13px;
+    transition:border-color .15s,box-shadow .15s;
+  }
+  .search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .search svg{flex:none;color:var(--faint)}
+  .search input{
+    border:0;background:transparent;flex:1;font-family:var(--body);
+    font-size:14.5px;color:var(--ink);outline:none;
+  }
+  .search input::placeholder{color:var(--faint)}
+  .iconbtn{
+    flex:none;width:40px;height:40px;border:1px solid var(--line);background:var(--surface2);
+    border-radius:10px;cursor:pointer;color:var(--muted);display:grid;place-items:center;
+    transition:.15s;
+  }
+  .iconbtn:hover{color:var(--accent);border-color:var(--accent)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+  .chip{
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;
+    padding:5px 11px;border-radius:20px;border:1px solid var(--line);
+    background:var(--surface2);color:var(--muted);cursor:pointer;
+    transition:.13s;white-space:nowrap;
+  }
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  html[data-theme="dark"] .chip.on{color:#04121a}
+  .metarow{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:11px;font-family:var(--mono);font-size:11.5px;color:var(--faint);
+  }
+  .metarow a{color:var(--accent);cursor:pointer;text-decoration:none}
+  .metarow a:hover{text-decoration:underline}
+
+  /* ---------- BODY ---------- */
+  main{max-width:960px;margin:0 auto;padding:26px 22px 90px}
+  .section{margin-top:34px;scroll-margin-top:150px}
+  .section:first-child{margin-top:8px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;
+    padding-bottom:10px;border-bottom:2px solid var(--line)}
+  .sec-num{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:600}
+  .sec-head h2{font-family:var(--disp);font-weight:600;font-size:20px;margin:0;letter-spacing:-.01em}
+  .sec-count{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint)}
+
+  details.qa{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    margin-bottom:11px;box-shadow:var(--shadow);overflow:hidden;transition:border-color .15s;
+  }
+  details.qa[open]{border-color:var(--accent)}
+  details.qa summary{
+    list-style:none;cursor:pointer;padding:15px 17px;display:flex;gap:13px;align-items:flex-start;
+    font-family:var(--disp);font-weight:500;font-size:15.5px;line-height:1.4;
+  }
+  details.qa summary::-webkit-details-marker{display:none}
+  .qmark{
+    font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent);
+    background:var(--accent-soft);border-radius:6px;padding:3px 7px;flex:none;margin-top:1px;
+  }
+  .qtext{flex:1}
+  .caret{flex:none;color:var(--faint);transition:transform .2s;margin-top:3px}
+  details.qa[open] .caret{transform:rotate(90deg);color:var(--accent)}
+  .answer{padding:2px 17px 18px 17px;border-top:1px solid var(--line2)}
+  .answer>*:first-child{margin-top:14px}
+  .answer p{margin:0 0 12px;font-size:14.5px;color:var(--ink)}
+  .answer ul{margin:0 0 12px;padding-left:20px}
+  .answer li{margin-bottom:7px;font-size:14.5px}
+  .answer b,.answer strong{font-weight:600;color:var(--ink)}
+  .answer code{
+    font-family:var(--mono);font-size:12.5px;background:var(--surface2);
+    border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--accent-ink);
+  }
+  .term{color:var(--accent-ink);font-weight:600}
+  .keyline{
+    display:block;font-family:var(--mono);font-size:12.5px;background:var(--surface2);
+    border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:10px 13px;
+    margin:0 0 12px;color:var(--ink);white-space:pre-wrap;overflow-x:auto;
+  }
+  .tip{
+    background:var(--amber-soft);border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);
+    border-radius:9px;padding:11px 13px;margin:14px 0 2px;font-size:13.5px;
+  }
+  .tip .tl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--amber);font-weight:600;display:block;margin-bottom:4px}
+  .noresult{text-align:center;padding:60px 20px;color:var(--faint);font-family:var(--mono);font-size:13px}
+  .hidden{display:none !important}
+
+  footer{max-width:960px;margin:0 auto;padding:0 22px 50px;color:var(--faint);
+    font-size:12.5px;font-family:var(--mono);text-align:center;line-height:1.7}
+
+  @media (max-width:560px){
+    .hero{padding:26px 16px 24px}
+    .controls-in,main,footer{padding-left:16px;padding-right:16px}
+    .gauge{min-width:calc(50% - 5px)}
+    details.qa summary{font-size:14.5px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <p class="eyebrow">Interview Prep · AI Infrastructure & LLM Systems</p>
+    <h1>Technical Question Bank</h1>
+    <p class="sub">Curated for <b>Vipin Saravana</b> — deep-dive answers mapped to every claim on your resume: vLLM serving, GPU parallelism, quantization, K8s/CI-CD, pretraining, and the projects you shipped. Expand any question. Tie answers back to <b>your own numbers</b>.</p>
+    <div class="gauges">
+      <div class="gauge"><div class="num">~2.3×</div><div class="lbl">Throughput lift</div></div>
+      <div class="gauge"><div class="num">~85%</div><div class="lbl">GPU utilization</div></div>
+      <div class="gauge"><div class="num">&lt;200ms</div><div class="lbl">p95 TTFT</div></div>
+      <div class="gauge"><div class="num">~40%</div><div class="lbl">MFU on H100</div></div>
+      <div class="gauge"><div class="num">30M+</div><div class="lbl">Tokens / day</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="controls-in">
+    <div class="searchrow">
+      <label class="search">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="q" type="text" placeholder="Search questions & answers…  (e.g. PagedAttention, MFU, all-reduce, WSD)" autocomplete="off">
+      </label>
+      <button class="iconbtn" id="theme" title="Toggle theme" aria-label="Toggle theme">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      </button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="metarow">
+      <span id="count"></span>
+      <span><a id="expandAll">expand all</a> · <a id="collapseAll">collapse all</a></span>
+    </div>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<footer>
+  Built as a study aid · ~45 questions across 14 areas · answers reflect systems concepts current to early 2026<br>
+  Speak in numbers, name the tradeoff, and always connect back to what you actually shipped at Zoho.
+</footer>
+
+<script>
+/* ============ CONTENT ============ */
+const CATS = [
+  ["vllm","vLLM & Serving"],
+  ["parallel","Parallelism"],
+  ["training","Distributed Training"],
+  ["gpu","GPU & MFU"],
+  ["quant","Quantization"],
+  ["spec","Speculative / MTP"],
+  ["obs","Observability"],
+  ["k8s","K8s / CI-CD"],
+  ["pretrain","Pretraining"],
+  ["speech","Speech Agent"],
+  ["nlsql","NL-to-SQL"],
+  ["ner","NER"],
+  ["rag","RAG"],
+  ["design","System Design & Behavioral"],
+];
+
+const SECTIONS = [
+  {
+    cat:"vllm", title:"vLLM & Inference Serving Internals",
+    qs:[
+      {q:"What is PagedAttention and why does it matter?",
+       a:`<p><span class="term">PagedAttention</span> is vLLM's core memory-management idea. The KV cache — the keys and values stored for every token already generated — is the biggest and most dynamic memory consumer during inference. Naive serving pre-allocates one <b>contiguous</b> buffer per request sized for the <i>maximum</i> possible sequence length. That causes two problems: <b>internal fragmentation</b> (you reserve 2048 slots but the reply is 100 tokens) and <b>external fragmentation</b> (free gaps that can't be reused). Real systems waste 60–80% of KV memory this way.</p>
+       <p>PagedAttention borrows OS <b>virtual memory paging</b>: it splits the KV cache into fixed-size <b>blocks</b> (e.g. 16 tokens each), stored <b>non-contiguously</b> in GPU memory. A per-request <b>block table</b> maps logical token positions to physical blocks, allocated on demand. Waste drops to under one block per sequence (&lt;4%).</p>
+       <ul>
+         <li><b>Higher effective batch size</b> → the throughput win, because you fit far more concurrent sequences in the same HBM.</li>
+         <li><b>Block sharing</b> via copy-on-write: parallel sampling, beam search, and shared system prompts reuse the same physical blocks until they diverge.</li>
+       </ul>
+       <div class="tip"><span class="tl">Tie to your resume</span>Your ~2.3× throughput and 55%→85% GPU-utilization jump are largely a memory-efficiency story: PagedAttention let you pack more concurrent requests, and continuous batching kept the GPU fed.</div>`},
+
+      {q:"Explain continuous (iteration-level) batching. How is it different from static batching?",
+       a:`<p><span class="term">Static batching</span> groups N requests, pads them to the longest, runs them together, and only releases the batch when the <i>slowest</i> sequence finishes. Short replies sit idle waiting for long ones — GPU utilization tanks under variable output lengths.</p>
+       <p><span class="term">Continuous batching</span> (a.k.a. iteration-level scheduling, from the Orca paper and used by vLLM) schedules at the granularity of a <b>single decode step</b>. After every token:</p>
+       <ul>
+         <li>Finished sequences <b>leave</b> the batch immediately and free their KV blocks.</li>
+         <li>Queued requests <b>join</b> the running batch on the very next iteration.</li>
+       </ul>
+       <p>The batch composition changes every step, so the GPU is never blocked on stragglers. Combined with PagedAttention this is what pushes utilization toward 85%+ and holds latency stable under load.</p>`},
+
+      {q:"Prefill vs decode — why is one compute-bound and the other memory-bound?",
+       a:`<p><span class="term">Prefill</span> processes the entire prompt in a <b>single parallel forward pass</b>. Lots of tokens × big matmuls → <b>compute-bound</b>, saturates Tensor Cores. Prefill latency <b>sets your TTFT</b> (time to first token).</p>
+       <p><span class="term">Decode</span> generates <b>one token at a time</b> autoregressively. Each step you must read the <i>entire</i> model weights (plus growing KV cache) from HBM to produce a single token → arithmetic intensity is tiny, so it's <b>memory-bandwidth-bound</b>. Decode sets your <b>TPOT / ITL</b> (time per output token / inter-token latency).</p>
+       <ul>
+         <li><b>Chunked prefill:</b> split long prompts into chunks and interleave them with decode steps so a big prefill doesn't stall ongoing generations.</li>
+         <li><b>Prefill/decode disaggregation:</b> run prefill and decode on separate GPU pools tuned for their bottleneck (compute vs bandwidth), avoiding interference. A hot topic at scale.</li>
+         <li><b>Why quantization / speculative decoding help decode most:</b> both attack the memory-bound phase.</li>
+       </ul>`},
+
+      {q:"How would you tune a vLLM deployment to hold p95 TTFT under 200ms at ~120 concurrent requests?",
+       a:`<p>Frame it as a <b>throughput ↔ latency tradeoff</b> and name the knobs:</p>
+       <ul>
+         <li><b>gpu_memory_utilization</b> — raise it to grow the KV cache and admit more sequences, but leave headroom to avoid preemption.</li>
+         <li><b>max_num_seqs / max_num_batched_tokens</b> — cap batch size so prefill of one giant request can't spike everyone's TTFT.</li>
+         <li><b>Chunked prefill</b> — bound the prefill work per step so TTFT stays flat as prompts grow.</li>
+         <li><b>Tensor parallel degree</b> — split the model over GPUs (within a node, NVLink) to shrink per-step latency if you're compute/memory limited.</li>
+         <li><b>Quantization</b> (FP8/INT8) — smaller weights = more KV room + faster decode.</li>
+         <li><b>Scheduling policy & admission control</b> — priority/queue limits so p95 doesn't blow up under bursts; watch preemption rate.</li>
+       </ul>
+       <div class="tip"><span class="tl">Interview move</span>Say explicitly: "I'd benchmark against live traffic, plot TTFT/TPOT vs concurrency, and pick the batch config on the knee of the curve." That mirrors the benchmarking language on your resume.</div>`},
+
+      {q:"What actually lives in the KV cache, and why is it the scaling bottleneck?",
+       a:`<p>For every token processed, each attention layer computes Key and Value vectors. To avoid recomputing them for all past tokens at every decode step, they're <b>cached</b>. Size scales as:</p>
+       <span class="keyline">KV bytes ≈ 2 × layers × seq_len × kv_heads × head_dim × dtype_bytes × batch</span>
+       <p>It grows <b>linearly with sequence length and batch</b>, and for long contexts it can dwarf the model weights. That's why it dominates memory and why techniques target it: <b>GQA/MQA</b> (fewer KV heads), <b>KV-cache quantization</b>, <b>PagedAttention</b> (no waste), and prefix caching (reuse shared prompts).</p>`},
+    ]
+  },
+  {
+    cat:"parallel", title:"Distributed Inference — Parallelism Strategies",
+    qs:[
+      {q:"Walk through data, tensor, pipeline, and expert parallelism.",
+       a:`<ul>
+         <li><b>Data Parallel (DP):</b> replicate the whole model on each GPU, split the batch. Training syncs gradients via all-reduce; inference = replicas behind a load balancer. Simple, but the whole model must fit on one GPU.</li>
+         <li><b>Tensor Parallel (TP):</b> shard individual weight <b>matrices</b> across GPUs — each holds a slice of every layer. Megatron style: column-parallel then row-parallel so you need only <b>one all-reduce per transformer block</b>. Very communication-heavy → keep it <b>within a node on NVLink</b>.</li>
+         <li><b>Pipeline Parallel (PP):</b> split the model by <b>layers</b> into stages on different GPUs. Micro-batches flow through the pipeline; the <b>1F1B</b> schedule minimizes the idle "bubble." Lower comms than TP → good <b>across nodes</b>.</li>
+         <li><b>Expert Parallel (EP):</b> for <b>MoE</b> models, distribute experts across GPUs. Routing needs <b>all-to-all</b> communication to send each token to its chosen experts and gather results.</li>
+       </ul>
+       <p>Add <b>sequence/context parallel</b> for very long contexts (shard along the sequence dim).</p>`},
+
+      {q:"How do you choose parallelism degrees for a given cluster?",
+       a:`<p>Match the strategy to the <b>communication topology</b>:</p>
+       <span class="keyline">TP  → within a node   (NVLink/NVSwitch, ~900 GB/s)
+PP  → across nodes    (InfiniBand, lower BW, latency-tolerant)
+DP  → outermost, scale-out replicas / gradient sync
+EP  → follows MoE expert count</span>
+       <ul>
+         <li><b>TP degree ≤ GPUs per node</b> — never cross the node boundary with TP; the all-reduces will crush you.</li>
+         <li>Total GPUs = DP × TP × PP (× EP for MoE).</li>
+         <li>Pick the <b>smallest TP</b> that makes the model fit, because TP comms scale with degree.</li>
+         <li>For inference specifically, TP lowers per-token latency; DP replicas raise aggregate throughput.</li>
+       </ul>
+       <div class="tip"><span class="tl">Tie to your resume</span>You "benchmarked tensor/data/expert parallelism against live request traffic" — be ready to say <i>what</i> you measured (TTFT, tokens/sec, utilization) and why TP stayed intra-node.</div>`},
+
+      {q:"Why is tensor parallelism so communication-intensive, and how does Megatron minimize it?",
+       a:`<p>In TP, a single matmul's output is split across GPUs, so producing the correct activation requires combining partial results — a collective op <b>inside every layer, on the critical path</b>. Do it naively and you all-reduce multiple times per block.</p>
+       <p>Megatron's trick: structure the two linear layers of the MLP (and the attention projections) as <b>column-parallel followed by row-parallel</b>. The column split needs no comms; only the row-parallel output needs one all-reduce. Net result: <b>one all-reduce in the forward pass and one in the backward pass per block</b> instead of many. That's why TP is viable — but only over NVLink.</p>`},
+    ]
+  },
+  {
+    cat:"training", title:"Distributed Training — DDP, NCCL, Mixed Precision",
+    qs:[
+      {q:"How does PyTorch DDP work under the hood?",
+       a:`<p><span class="term">DistributedDataParallel</span> replicates the full model on every GPU; each rank processes a different shard of the global batch. After the backward pass, gradients are <b>averaged across all ranks</b> so every replica stays identical.</p>
+       <ul>
+         <li>Gradients are grouped into <b>buckets</b>; as each bucket's grads finish in the backward pass, DDP kicks off its <b>all-reduce asynchronously</b> — overlapping communication with the rest of backprop.</li>
+         <li>Uses a <b>ring all-reduce</b> (via NCCL): bandwidth-optimal, transferring ≈ <code>2(N-1)/N × grad_size</code> regardless of GPU count.</li>
+         <li>Limitation: the <b>entire model + optimizer state must fit on one GPU</b>. When it doesn't, you move to <b>FSDP / ZeRO</b>.</li>
+       </ul>`},
+
+      {q:"DDP vs FSDP / ZeRO — when do you switch?",
+       a:`<p><span class="term">ZeRO</span> (DeepSpeed) / <span class="term">FSDP</span> (PyTorch) shard the redundant state that DDP replicates:</p>
+       <ul>
+         <li><b>ZeRO-1:</b> shard optimizer states.</li>
+         <li><b>ZeRO-2:</b> + shard gradients.</li>
+         <li><b>ZeRO-3 / FSDP:</b> + shard parameters. Each GPU holds only a slice; it <b>all-gathers</b> the full layer weights just-in-time for the forward/backward, then frees them.</li>
+       </ul>
+       <p>Switch to FSDP when the model + Adam states (which are ~2× the params in FP32) no longer fit in one GPU. Tradeoff: more communication (all-gather per layer) in exchange for fitting much larger models. Pair with activation checkpointing and CPU offload for the extremes.</p>`},
+
+      {q:"BF16 vs FP16 for mixed-precision training — why is BF16 preferred on H100?",
+       a:`<p>Both are 16-bit, but they split the bits differently:</p>
+       <span class="keyline">FP16 : 1 sign · 5 exponent · 10 mantissa   → precise, narrow range
+BF16 : 1 sign · 8 exponent ·  7 mantissa   → same range as FP32, coarser</span>
+       <ul>
+         <li><b>FP16</b>'s tiny exponent range means small gradients <b>underflow to zero</b> → you need <b>loss scaling</b> (scale loss up before backward, unscale before the step) and it can still be finicky.</li>
+         <li><b>BF16</b> has FP32's dynamic range, so gradients rarely under/overflow — <b>no loss scaling needed</b>, much more stable. The cost is precision, which mixed precision handles by keeping <b>FP32 master weights</b> and doing the optimizer step in FP32.</li>
+       </ul>
+       <p>On Ampere/Hopper, Tensor Cores accelerate both, so BF16 is the default for LLM training. That's exactly your <code>BF16 mixed precision</code> pretraining setup.</p>`},
+
+      {q:"What is NCCL and which collectives matter?",
+       a:`<p><span class="term">NCCL</span> (NVIDIA Collective Communications Library) implements GPU-to-GPU collectives optimized for the interconnect (NVLink, PCIe, InfiniBand), with topology-aware ring/tree algorithms.</p>
+       <ul>
+         <li><b>all-reduce</b> — sum+broadcast; the workhorse of DDP gradient sync.</li>
+         <li><b>all-gather</b> — collect shards; used by FSDP to rebuild layer weights and in TP.</li>
+         <li><b>reduce-scatter</b> — reduce then shard; the other half of ZeRO.</li>
+         <li><b>all-to-all</b> — every rank sends distinct data to every other; the backbone of <b>MoE expert routing</b>.</li>
+         <li><b>broadcast</b> — replicate from one rank (e.g. weight init).</li>
+       </ul>
+       <p>Common failure mode to mention: a hang usually means a <b>collective mismatch</b> (ranks disagree on shape/op) or a NIC/NVLink issue — good debugging story material.</p>`},
+    ]
+  },
+  {
+    cat:"gpu", title:"GPU Architecture & MFU",
+    qs:[
+      {q:"What is MFU and how do you compute it?",
+       a:`<p><span class="term">Model FLOPs Utilization</span> = achieved useful FLOPs ÷ the GPU's theoretical peak FLOPs. It's the honest efficiency number because it ignores wasted/recomputed work.</p>
+       <span class="keyline">Training FLOPs per token ≈ 6 · N      (N = params)
+   forward ≈ 2N, backward ≈ 4N
+
+MFU = (6 · N · tokens_per_sec) / (num_GPUs · peak_FLOPs_per_GPU)</span>
+       <ul>
+         <li>H100 BF16 dense peak ≈ <b>~990 TFLOP/s</b> (the ~2 PFLOP number includes 2:4 sparsity).</li>
+         <li><b>~40% MFU on H100 is genuinely good</b> for real training — comms, memory stalls, and pipeline bubbles eat the rest. Frontier labs report 35–55%.</li>
+         <li>Distinguish <b>MFU vs HFU</b> (Hardware FLOPs Utilization) — HFU counts activation-recomputation FLOPs, so it's higher but less meaningful.</li>
+       </ul>
+       <div class="tip"><span class="tl">Tie to your resume</span>Be ready to explain what got you to 40%: BF16 + Tensor Cores, overlapping comms with compute, good batch/seq sizing, avoiding CPU-bound dataloading, and activation checkpointing tradeoffs.</div>`},
+
+      {q:"What Hopper (H100) features matter for LLM workloads?",
+       a:`<ul>
+         <li><b>4th-gen Tensor Cores + Transformer Engine</b> — native <b>FP8</b> (E4M3 / E5M2) with automatic per-tensor scaling, big speedups for training and inference.</li>
+         <li><b>HBM3</b> — ~3.35 TB/s bandwidth; decode is bandwidth-bound so this directly raises token rate.</li>
+         <li><b>4th-gen NVLink (900 GB/s) + NVSwitch</b> — makes intra-node tensor parallelism practical.</li>
+         <li><b>TMA</b> (Tensor Memory Accelerator) — async bulk memory transfers, feeds Tensor Cores without stalling.</li>
+         <li><b>Thread-block clusters / distributed shared memory</b> and <b>MIG</b> (partition one GPU into isolated instances for serving).</li>
+       </ul>`},
+
+      {q:"What changes with Blackwell?",
+       a:`<p><span class="term">Blackwell</span> (B200 / GB200) pushes the same directions further:</p>
+       <ul>
+         <li><b>2nd-gen Transformer Engine</b> with <b>FP4 / FP6</b> (NVFP4) micro-scaling formats — roughly doubles low-precision throughput vs Hopper.</li>
+         <li><b>Two reticle-sized dies</b> fused into one GPU with a fast die-to-die link.</li>
+         <li><b>HBM3e</b> (more capacity + bandwidth) and <b>NVLink 5 (~1.8 TB/s)</b>.</li>
+         <li>GB200 NVL72 racks act like one huge NVLink domain — TP/EP scale across far more GPUs coherently.</li>
+       </ul>
+       <p>The narrative: each generation lowers usable precision (FP16→FP8→FP4) and raises interconnect bandwidth, so bigger models serve cheaper.</p>`},
+
+      {q:"Roofline thinking — how do you know if a kernel is compute- or memory-bound?",
+       a:`<p>Compare <b>arithmetic intensity</b> (FLOPs per byte moved) against the hardware's compute:bandwidth ratio.</p>
+       <ul>
+         <li>Low intensity (few FLOPs per byte) → you're on the <b>bandwidth roof</b> → memory-bound. LLM <b>decode</b> and elementwise ops live here.</li>
+         <li>High intensity → <b>compute roof</b> → compute-bound. Large matmuls / <b>prefill</b> live here.</li>
+       </ul>
+       <p>Fixes differ: memory-bound → <b>fuse kernels, quantize, raise batch size</b> to reuse loaded weights; compute-bound → lower precision, better Tensor Core utilization. FlashAttention is the classic example: it's memory-bound attention made fast by <b>fusing and tiling to avoid materializing the N×N matrix in HBM</b>.</p>`},
+    ]
+  },
+  {
+    cat:"quant", title:"Quantization",
+    qs:[
+      {q:"PTQ vs QAT, and weight-only vs weight+activation quantization?",
+       a:`<ul>
+         <li><b>PTQ</b> (post-training): quantize a trained model with a small calibration set. Cheap, fast, the default for serving.</li>
+         <li><b>QAT</b> (quantization-aware training): simulate quantization during training so weights adapt. Higher accuracy at very low bits, but needs a training run.</li>
+         <li><b>Weight-only</b> (e.g. INT4/INT8 weights, compute in FP16): shrinks memory and speeds up <b>memory-bound decode</b>; activations stay high precision.</li>
+         <li><b>Weight + activation</b> (W8A8): quantize both to actually use INT8 Tensor Cores — bigger speedup but harder because <b>activations have outliers</b>.</li>
+       </ul>`},
+
+      {q:"Compare GPTQ, AWQ, SmoothQuant, and LLM.int8().",
+       a:`<ul>
+         <li><b>GPTQ</b> — layer-wise weight quantization using <b>second-order (Hessian) info</b> to compensate for rounding error one column at a time. Strong INT4 weight-only.</li>
+         <li><b>AWQ</b> (Activation-aware Weight Quantization) — observes that a <b>small % of weight channels are salient</b> (identified via activation magnitude) and scales them to protect them. Fast, great INT4.</li>
+         <li><b>SmoothQuant</b> — enables <b>W8A8</b> by mathematically <b>migrating activation outliers into the weights</b> (a per-channel scaling), making activations quantization-friendly without changing the math.</li>
+         <li><b>LLM.int8()</b> — mixed precision: keep the rare outlier feature dimensions in FP16, quantize the rest to INT8. Simple, accuracy-preserving, slower.</li>
+       </ul>
+       <p>Hardware-native low precision: <b>FP8</b> on Hopper, <b>FP4/NVFP4</b> on Blackwell — often better accuracy/speed than INT at the same bit-width because floating point handles dynamic range.</p>`},
+
+      {q:"You mention TURBOQUANT — what is it and where does it fit?",
+       a:`<p><span class="term">TurboQuant</span> is a <b>Google Research</b> vector-quantization method (ICLR 2026) aimed specifically at the <b>KV cache</b>, not model weights. It's <b>data-oblivious / online</b>, so it needs no fine-tuning and plugs into existing serving.</p>
+       <ul>
+         <li><b>Rotation step:</b> apply a random rotation so each coordinate becomes near-Gaussian (concentration of measure) — this spreads outlier energy evenly, the same insight behind Hadamard/rotation-based methods.</li>
+         <li><b>Scalar Lloyd-Max quantization</b> per coordinate with a precomputed optimal codebook, reaching ~<b>3 bits per value</b> with near-lossless attention.</li>
+         <li>It removes the usual per-block scale/zero-point <b>overhead</b> that eats into low-bit savings.</li>
+       </ul>
+       <div class="tip"><span class="tl">Positioning</span>Frame it as: "weight quantization shrinks the model; <b>KV-cache</b> quantization (TurboQuant) shrinks the fastest-growing runtime memory, which is what unlocks longer context and bigger batches." That shows you understand where the bottleneck actually is.</div>`},
+
+      {q:"On your resume you consolidated 4 DistilBERT models into one quantized Electra-Small — how, and what were the tradeoffs?",
+       a:`<p>Great story to have crisp. The structure:</p>
+       <ul>
+         <li><b>Consolidation:</b> four task-specific DistilBERTs → one multi-task Electra-Small. Electra's replaced-token-detection pretraining is more sample-efficient, so a smaller model held accuracy. One model = one set of weights loaded, one forward pass, shared serving.</li>
+         <li><b>Quantization (INT8/FP16):</b> PTQ to cut memory and latency; validate F1 didn't regress on a held-out set.</li>
+         <li><b>Results:</b> p95 latency ~85→47ms (~45%↓), serving cost ~40%↓, entity-level F1 <b>up</b> ~3 points.</li>
+       </ul>
+       <p>Tradeoff to name honestly: multi-task consolidation risks <b>task interference / negative transfer</b>; you'd guard against it with per-task eval and possibly task-specific heads on a shared encoder.</p>`},
+    ]
+  },
+  {
+    cat:"spec", title:"Speculative Decoding & Multi-Token Prediction",
+    qs:[
+      {q:"How does speculative decoding speed up inference without changing outputs?",
+       a:`<p>Decode is memory-bound: verifying <b>k tokens in one forward pass</b> costs almost the same as generating one, because you're bottlenecked on loading weights, not FLOPs. Speculative decoding exploits this:</p>
+       <ul>
+         <li>A cheap <b>draft model</b> proposes k candidate tokens autoregressively.</li>
+         <li>The big <b>target model</b> scores all k <b>in parallel</b> in one pass.</li>
+         <li>A <b>rejection-sampling</b> acceptance test keeps the longest correct prefix and resamples at the first mismatch.</li>
+       </ul>
+       <p>The output distribution is provably <b>identical</b> to the target model alone — it's a pure latency win, typically 2–3×, governed by the <b>acceptance rate</b> (how well the draft mimics the target).</p>`},
+
+      {q:"What is Multi-Token Prediction (MTP) and how does it relate to speculative decoding?",
+       a:`<p><span class="term">Multi-Token Prediction</span> adds extra output heads so the model is trained to predict <b>several future tokens</b> at once, not just the next one (used as a training objective in <b>DeepSeek-V3</b>). Benefits:</p>
+       <ul>
+         <li><b>Denser training signal</b> → better sample efficiency and representations.</li>
+         <li>At inference, those MTP heads become a <b>built-in drafter</b> for <b>self-speculative decoding</b> — no separate draft model needed.</li>
+       </ul>
+       <p>Related families to name: <b>Medusa</b> (multiple decoding heads + tree attention), <b>EAGLE</b> (autoregress on the model's own features, higher acceptance), and <b>lookahead decoding</b> (n-gram jacobi). All attack the same memory-bound decode phase.</p>`},
+    ]
+  },
+  {
+    cat:"obs", title:"Observability & Monitoring",
+    qs:[
+      {q:"What does vLLM expose via /metrics, and how do you wire it to Grafana?",
+       a:`<p>vLLM exposes a <b>Prometheus</b> <code>/metrics</code> endpoint. <b>Prometheus scrapes</b> it on an interval; <b>Grafana</b> queries Prometheus (PromQL) for dashboards and alerts.</p>
+       <p>Key series to graph:</p>
+       <ul>
+         <li><code>vllm:time_to_first_token_seconds</code> (TTFT) and <code>time_per_output_token</code> — your latency SLOs, plotted as histograms → p50/p95/p99.</li>
+         <li><code>vllm:num_requests_running</code> / <code>num_requests_waiting</code> — batch occupancy and queue depth.</li>
+         <li><code>vllm:gpu_cache_usage_perc</code> — KV-cache pressure; near 100% → preemptions.</li>
+         <li><code>vllm:num_preemptions</code>, prompt/generation <b>throughput</b> (tokens/s), <code>e2e_request_latency</code>.</li>
+       </ul>
+       <div class="tip"><span class="tl">Tie to your resume</span>That's exactly your "wired vLLM /metrics into Grafana, tracking 30M+ tokens/day, cut MTTD from hours to &lt;10 min." Explain the MTTD win = alert rules on TTFT/queue-depth/preemption thresholds instead of eyeballing.</div>`},
+
+      {q:"Which SLIs and SLOs would you set for an LLM serving system?",
+       a:`<ul>
+         <li><b>TTFT</b> — first-token latency; drives perceived responsiveness. SLO on p95/p99.</li>
+         <li><b>TPOT / ITL</b> — inter-token latency; drives streaming smoothness.</li>
+         <li><b>E2E latency</b> — full request time.</li>
+         <li><b>Throughput</b> — tokens/sec and requests/sec.</li>
+         <li><b>Goodput</b> — the number that matters most: requests served <b>within SLO</b>. Raw throughput can look great while goodput collapses under overload.</li>
+         <li><b>Error/preemption/saturation</b> — the RED (Rate, Errors, Duration) and USE (Utilization, Saturation, Errors) framings.</li>
+       </ul>
+       <p><b>MTTD</b> (detect) and <b>MTTR</b> (resolve) are your operational meta-metrics — good alerting drives MTTD down.</p>`},
+    ]
+  },
+  {
+    cat:"k8s", title:"Kubernetes, Docker & CI/CD for ML",
+    qs:[
+      {q:"How does Kubernetes schedule and isolate GPUs?",
+       a:`<ul>
+         <li><b>NVIDIA device plugin / GPU Operator</b> advertises <code>nvidia.com/gpu</code> as a schedulable resource; pods request it in <code>resources.limits</code>.</li>
+         <li><b>Node selectors / taints & tolerations</b> pin GPU workloads to GPU nodes and keep CPU jobs off them.</li>
+         <li><b>MIG</b> partitions one A100/H100 into isolated instances; <b>time-slicing</b> shares a GPU for bursty/small models.</li>
+         <li>The <b>cluster autoscaler / Karpenter</b> spins GPU nodes up and down with demand.</li>
+       </ul>`},
+
+      {q:"What's tricky about running LLM inference on K8s vs a normal web service?",
+       a:`<ul>
+         <li><b>Slow startup:</b> loading tens of GB of weights takes minutes → use <b>startupProbe</b> (generous) plus a real <b>readinessProbe</b> so traffic only arrives once the model is warm.</li>
+         <li><b>Big images / weights:</b> bake or cache weights via init containers / PVCs / a model cache, not a fat image; watch registry pull times.</li>
+         <li><b>Autoscaling signal:</b> CPU% is useless. Scale on <b>queue depth / GPU utilization / TTFT</b> via KEDA or the Prometheus adapter (custom metrics HPA).</li>
+         <li><b>Expensive, scarce pods:</b> graceful drain, <b>PodDisruptionBudgets</b>, and careful rolling updates so you never drop all replicas of a costly model.</li>
+         <li><b>Multi-GPU pods:</b> gang scheduling for TP so a pod gets all its GPUs at once (no partial placement).</li>
+       </ul>
+       <div class="tip"><span class="tl">Tie to your resume</span>You "led end-to-end migration to a K8s deployment workflow and standardized CI/CD." Have the before/after ready: manual releases → declarative, repeatable rollouts.</div>`},
+
+      {q:"What does a good CI/CD pipeline for ML models look like?",
+       a:`<ul>
+         <li><b>CI:</b> unit + integration tests, <b>model regression / eval tests</b> (accuracy on a fixed set), and <b>latency/throughput benchmarks gated in CI</b> so a change can't silently regress p95.</li>
+         <li><b>Artifacts:</b> build & scan the container, push to a registry, version the <b>model</b> (MLflow/registry) alongside the code.</li>
+         <li><b>CD:</b> GitOps (ArgoCD/Flux) reconciles the cluster to a declared state; <b>canary or blue-green</b> rollouts with automatic rollback on SLO breach.</li>
+         <li><b>Reproducibility:</b> pinned deps, seeded runs, tracked configs (your YAML-driven approach fits here).</li>
+       </ul>`},
+    ]
+  },
+  {
+    cat:"pretrain", title:"LLM Pretraining Framework",
+    qs:[
+      {q:"AdamW vs Muon — what's the difference and when would you use each?",
+       a:`<p><span class="term">AdamW</span> updates each parameter independently using first/second moment estimates, with <b>decoupled weight decay</b> (the "W" — decay applied directly to weights, not folded into the gradient). Robust, universal, but treats a weight <b>matrix</b> as a bag of scalars.</p>
+       <p><span class="term">Muon</span> (MomentUm Orthogonalized by Newton-Schulz) treats 2D weights as <b>matrices with geometric structure</b>: it takes the momentum buffer and <b>orthogonalizes</b> it via cheap <b>Newton-Schulz iterations</b> before the update — roughly steepest descent under the spectral norm. Reported <b>~2× compute efficiency vs AdamW</b>, and now used in production (Kimi K2, DeepSeek V4).</p>
+       <ul>
+         <li>Muon only works on <b>2D matrices</b> (linear layers). Use <b>AdamW for 1D params</b> — embeddings, LayerNorm gains/biases, output head. So real runs are a <b>hybrid</b>.</li>
+         <li>Scaling Muon needed two fixes: adding <b>weight decay</b> and <b>per-parameter update scaling</b> so it works without per-layer tuning.</li>
+       </ul>
+       <div class="tip"><span class="tl">Tie to your resume</span>Your framework lists "AdamW/Muon" — be ready to explain the 2D-only constraint and why you'd route params to different optimizers.</div>`},
+
+      {q:"Explain the WSD schedule vs cosine, and why WSD is popular now.",
+       a:`<ul>
+         <li><b>Cosine:</b> warm up, then smoothly decay the LR to a minimum over a <b>pre-committed total step count</b>. Great, but you must fix the horizon up front — extending training means restarting the schedule.</li>
+         <li><b>WSD</b> (Warmup–Stable–Decay): warmup → a long <b>constant/stable LR</b> phase → a short, rapid <b>decay</b> at the very end. Matches cosine's final loss.</li>
+       </ul>
+       <p>Why teams like WSD: you can <b>checkpoint anywhere in the stable phase and just keep training</b> (add more data, extend the run) without committing to a horizon, and you only "spend" the decay when you're ready to finalize. It decouples the schedule from the total budget — very practical for iterative pretraining. Popularized by MiniCPM/DeepSeek-style runs.</p>`},
+
+      {q:"How do you make checkpointing robust so a failed run wastes near-zero compute?",
+       a:`<p>At H100 scale, hardware failures are <b>expected</b>, so checkpointing is a reliability feature, not an afterthought.</p>
+       <ul>
+         <li>Save <b>model + optimizer + LR scheduler + RNG/dataloader state</b> — everything needed to resume bit-for-bit; save weights alone and you lose Adam's moments.</li>
+         <li><b>Auto-resume:</b> on restart, detect the latest valid checkpoint and continue — no human in the loop.</li>
+         <li><b>Rotation:</b> keep the last N + periodic milestones; delete the rest to bound disk.</li>
+         <li><b>Async / distributed checkpointing:</b> snapshot to CPU/host then flush to storage in the background so you don't stall the GPUs; <b>shard</b> the checkpoint for FSDP.</li>
+         <li>Write to a temp path then atomic-rename to avoid half-written checkpoints after a crash.</li>
+       </ul>
+       <div class="tip"><span class="tl">Tie to your resume</span>Exactly your "auto-resume, rotation, cut wasted compute on failed runs to near-zero." Add the async point to sound production-grade.</div>`},
+
+      {q:"What memory-saving techniques let you train larger than a GPU's memory?",
+       a:`<ul>
+         <li><b>Activation checkpointing / recomputation:</b> don't store all activations; recompute them in the backward pass. Trades ~30% extra compute for large activation-memory savings (raises HFU, not MFU).</li>
+         <li><b>Gradient accumulation:</b> simulate a large batch with several micro-batches before stepping.</li>
+         <li><b>ZeRO/FSDP sharding + CPU/NVMe offload</b> of optimizer states.</li>
+         <li><b>Mixed precision (BF16)</b> halves activation/weight memory.</li>
+         <li><b>Gradient clipping</b> for stability (not memory, but always mentioned alongside).</li>
+       </ul>`},
+    ]
+  },
+  {
+    cat:"speech", title:"Real-Time Speech Agent (STT → LLM → TTS)",
+    qs:[
+      {q:"Walk through your low-latency voice pipeline and the latency budget.",
+       a:`<p>A streaming, pipelined chain where every stage is incremental:</p>
+       <span class="keyline">Mic → VAD/endpointing → streaming STT → LLM (streaming) → streaming TTS → speaker
+Budget: E2E ~1.1s · LLM TTFT ~250ms · barge-in <300ms</span>
+       <ul>
+         <li><b>VAD</b> (voice activity detection, e.g. Silero) detects speech start and — critically — <b>endpointing</b> (when the user finished) so you don't wait too long or cut them off.</li>
+         <li><b>Streaming STT</b> emits partial transcripts so the LLM can start early.</li>
+         <li><b>LLM</b> streams tokens; low TTFT is what makes it feel responsive — the first spoken words start before the full answer exists.</li>
+         <li><b>Streaming TTS</b> synthesizes chunk-by-chunk so audio begins ~immediately.</li>
+       </ul>`},
+
+      {q:"How do you handle barge-in / interruptions?",
+       a:`<p><b>Barge-in</b> = user starts talking while the agent is speaking. Handling it well is the difference between a demo and a product:</p>
+       <ul>
+         <li>Keep VAD listening <b>during</b> TTS playback (with <b>acoustic echo cancellation</b> so the agent doesn't hear itself).</li>
+         <li>On detected speech, <b>immediately cancel</b> in-flight TTS and stop the LLM generation, flush the audio buffer — your &lt;300ms barge-in target is this cancel latency.</li>
+         <li>Manage <b>turn state</b> cleanly (who holds the floor) so the interrupted response doesn't resume or duplicate.</li>
+       </ul>
+       <div class="tip"><span class="tl">Tie to your resume</span>Sell the <b>plug-and-play framework</b> angle: modular stages cut new voice use-case rollout from ~3 weeks to ~4 days. That's a <b>platform</b> contribution, which infra interviewers love.</div>`},
+    ]
+  },
+  {
+    cat:"nlsql", title:"Natural Language → SQL",
+    qs:[
+      {q:"How did you get ~88% execution accuracy and cut hallucinated queries ~60%?",
+       a:`<p>Frame it as a <b>generate → validate → correct</b> system, not just prompting:</p>
+       <ul>
+         <li><b>Schema grounding:</b> inject the relevant tables/columns into the prompt; for large enterprise schemas, <b>retrieve</b> the likely-relevant subset (embeddings over table/column descriptions) so you don't blow the context or confuse the model.</li>
+         <li><b>Few-shot exemplars</b> of NL→SQL pairs in your dialect.</li>
+         <li><b>sqlglot-based validation:</b> parse the generated SQL into an AST and check every referenced table/column/function <b>against the real schema</b> — this catches hallucinated identifiers before execution and is where a lot of the 60% reduction comes from. sqlglot also transpiles dialects.</li>
+         <li><b>Multi-stage validation + self-correction:</b> if parse/validation fails, feed the error back for a retry; optionally do a safe <b>dry run / EXPLAIN</b>.</li>
+         <li><b>Guardrails:</b> read-only connections, row limits, deny DDL.</li>
+       </ul>
+       <p>Metric nuance: <b>execution accuracy</b> (does it return the right result set?) is the right target, not exact-match string equality — many correct queries differ syntactically.</p>`},
+    ]
+  },
+  {
+    cat:"ner", title:"Named Entity Recognition Pipeline",
+    qs:[
+      {q:"Why Electra over DistilBERT, and how did consolidation improve F1 while cutting latency?",
+       a:`<ul>
+         <li><b>Electra</b> pretrains with <b>replaced-token detection</b> (a discriminator over <i>all</i> tokens) rather than masked-LM over 15% of tokens, so it's more <b>sample-efficient</b> — a small Electra can match or beat a distilled BERT at fewer params.</li>
+         <li><b>Consolidation logic:</b> four separate DistilBERTs meant four model loads, four forward passes, four times the serving footprint. One shared encoder = one pass, better cache locality, and <b>positive transfer</b> across related entity types can raise F1 (your ~+3 points).</li>
+         <li><b>INT8/FP16 quantization</b> then cut p95 ~85→47ms and serving cost ~40%.</li>
+       </ul>
+       <p>Be ready for the counter-question: how did you ensure consolidation didn't <b>hurt</b> any single task? Answer: per-task eval sets, and the option of a shared encoder with lightweight per-task heads if interference appeared.</p>`},
+    ]
+  },
+  {
+    cat:"rag", title:"Retrieval-Augmented Generation",
+    qs:[
+      {q:"Walk through a production RAG pipeline and its main failure modes.",
+       a:`<span class="keyline">docs → chunk → embed → vector index (HNSW/IVF)
+query → embed → ANN top-k → (hybrid + rerank) → assemble context → LLM → grounded answer</span>
+       <ul>
+         <li><b>Chunking:</b> size + overlap matter; too big dilutes retrieval, too small loses context.</li>
+         <li><b>Hybrid retrieval:</b> dense (embeddings) + sparse (BM25) catches both semantic and exact-keyword matches.</li>
+         <li><b>Reranking:</b> a cross-encoder reorders the top-k for precision before it hits the context window.</li>
+         <li><b>Grounding/citations:</b> constrain the model to answer from retrieved context; cite sources.</li>
+       </ul>
+       <p><b>Failure modes to name:</b> retrieval miss (answer isn't in top-k), <b>lost-in-the-middle</b> (models under-use mid-context), stale index, and hallucination when context is thin. <b>Eval</b> with faithfulness / answer-relevance / context precision-recall (RAGAS-style).</p>`},
+    ]
+  },
+  {
+    cat:"design", title:"System Design & Behavioral",
+    qs:[
+      {q:"Design a serving system for an 8B model at 120 concurrent users with a p95 TTFT SLO.",
+       a:`<p>Structure the answer top-down:</p>
+       <ul>
+         <li><b>Requirements:</b> QPS, prompt/output length distribution, TTFT & TPOT SLOs, cost ceiling.</li>
+         <li><b>Model fit:</b> 8B in BF16 ≈ 16GB; fits one H100 (80GB) with plenty of KV room, or quantize to FP8 for more batch headroom.</li>
+         <li><b>Engine:</b> vLLM — PagedAttention + continuous batching + chunked prefill.</li>
+         <li><b>Scale-out:</b> DP replicas behind a load balancer for throughput; TP only if per-token latency needs it. Autoscale on queue depth / GPU util.</li>
+         <li><b>Serving infra:</b> K8s with GPU nodes, readiness gated on model warm-up, canary rollouts.</li>
+         <li><b>Observability:</b> Prometheus + Grafana on TTFT/TPOT/goodput/preemption; alerts drive MTTD.</li>
+         <li><b>Overload:</b> admission control / queue caps so p95 degrades gracefully, not catastrophically.</li>
+       </ul>
+       <p>This is literally your Zoho system described as a design — lean on your real numbers.</p>`},
+
+      {q:"Tell me about a hard production problem you debugged. (How to frame it)",
+       a:`<p>Use <b>STAR</b> and make the metric the hero. Strong candidates from your resume:</p>
+       <ul>
+         <li><b>Situation:</b> throughput/latency ceiling on the 8B serving path (~1,900 tok/s, ~55% util, latency creeping under load).</li>
+         <li><b>Task:</b> hit an SLO at ~120 concurrent without new hardware.</li>
+         <li><b>Action:</b> benchmarked parallelism configs against <b>live traffic</b>, moved to vLLM (PagedAttention + continuous batching), tuned batch/KV settings, added chunked prefill, evaluated FP8 & MTP.</li>
+         <li><b>Result:</b> ~2.3× throughput (→4,400 tok/s), util 55%→85%, p95 TTFT &lt;200ms — and I built the Grafana observability that cut MTTD from hours to &lt;10 min so we'd catch regressions.</li>
+       </ul>
+       <div class="tip"><span class="tl">Delivery tip</span>Always end on the <b>number</b> and the <b>lasting artifact</b> (the dashboard, the plug-and-play framework). It signals you build systems, not one-offs.</div>`},
+
+      {q:"Why do you want to work on AI infrastructure (vs modeling)?",
+       a:`<p>Have a genuine, specific answer. A strong shape: "The bottleneck for useful AI is increasingly <b>systems</b>, not just model quality — getting tokens out fast, cheap, and reliably at scale is where I've had the most impact (2.3× throughput, 85% util). I like that infra work is <b>measurable</b> and <b>compounding</b>: a serving or checkpointing improvement helps every model and every team, not one experiment." Then point to something specific about the team/role you're interviewing for.</p>`},
+
+      {q:"What questions should YOU ask the interviewer?",
+       a:`<ul>
+         <li>What's the current serving stack and where's the biggest bottleneck — memory, comms, or scheduling?</li>
+         <li>What scale of GPUs / which generation (Hopper vs Blackwell), and how are clusters partitioned?</li>
+         <li>How do you measure success for infra work — cost/token, goodput, MFU?</li>
+         <li>Build vs adopt — do you extend open source (vLLM) or run in-house engines?</li>
+         <li>How is on-call / reliability handled for GPU services?</li>
+       </ul>
+       <p>Asking these signals seniority and that you think in systems and tradeoffs.</p>`},
+    ]
+  },
+];
+
+/* ============ RENDER ============ */
+const main = document.getElementById('main');
+const chipsBox = document.getElementById('chips');
+const countEl = document.getElementById('count');
+let totalQ = 0;
+
+// chips
+const chipAll = document.createElement('button');
+chipAll.className = 'chip on'; chipAll.textContent = 'All'; chipAll.dataset.cat = 'all';
+chipsBox.appendChild(chipAll);
+CATS.forEach(([id,label])=>{
+  const c = document.createElement('button');
+  c.className='chip'; c.textContent=label; c.dataset.cat=id;
+  chipsBox.appendChild(c);
+});
+
+SECTIONS.forEach((sec,i)=>{
+  const s = document.createElement('section');
+  s.className='section'; s.dataset.cat=sec.cat; s.id='sec-'+sec.cat;
+  const head = document.createElement('div');
+  head.className='sec-head';
+  head.innerHTML = `<span class="sec-num">${String(i+1).padStart(2,'0')}</span>
+    <h2>${sec.title}</h2>
+    <span class="sec-count">${sec.qs.length} Q</span>`;
+  s.appendChild(head);
+  sec.qs.forEach(item=>{
+    totalQ++;
+    const d = document.createElement('details');
+    d.className='qa'; d.dataset.cat=sec.cat;
+    d.dataset.text = (item.q+' '+item.a).toLowerCase().replace(/<[^>]+>/g,' ');
+    d.innerHTML = `<summary>
+        <span class="qmark">Q</span>
+        <span class="qtext">${item.q}</span>
+        <span class="caret"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 18 6-6-6-6"/></svg></span>
+      </summary>
+      <div class="answer">${item.a}</div>`;
+    s.appendChild(d);
+  });
+  main.appendChild(s);
+});
+
+const noRes = document.createElement('div');
+noRes.className='noresult hidden';
+noRes.textContent='// no questions match — try another keyword';
+main.appendChild(noRes);
+
+/* ============ FILTER ============ */
+const qInput = document.getElementById('q');
+let activeCat = 'all';
+
+function apply(){
+  const term = qInput.value.trim().toLowerCase();
+  let visible = 0;
+  document.querySelectorAll('details.qa').forEach(d=>{
+    const catOk = activeCat==='all' || d.dataset.cat===activeCat;
+    const txtOk = !term || d.dataset.text.includes(term);
+    const show = catOk && txtOk;
+    d.classList.toggle('hidden', !show);
+    if(show) visible++;
+    if(term && show) d.open = true;
+    if(!term && !d.dataset.pinned) d.open = false;
+  });
+  document.querySelectorAll('.section').forEach(s=>{
+    const any = s.querySelector('details.qa:not(.hidden)');
+    s.classList.toggle('hidden', !any);
+  });
+  noRes.classList.toggle('hidden', visible>0);
+  countEl.textContent = `${visible} / ${totalQ} questions`;
+}
+
+qInput.addEventListener('input', apply);
+chipsBox.addEventListener('click', e=>{
+  const c = e.target.closest('.chip'); if(!c) return;
+  activeCat = c.dataset.cat;
+  document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on', x===c));
+  apply();
+  if(activeCat!=='all'){
+    const s=document.getElementById('sec-'+activeCat);
+    if(s) window.scrollTo({top:s.offsetTop-140,behavior:'smooth'});
+  } else window.scrollTo({top:0,behavior:'smooth'});
+});
+
+document.getElementById('expandAll').onclick=()=>document.querySelectorAll('details.qa:not(.hidden)').forEach(d=>d.open=true);
+document.getElementById('collapseAll').onclick=()=>document.querySelectorAll('details.qa').forEach(d=>d.open=false);
+
+/* ============ THEME ============ */
+const themeBtn = document.getElementById('theme');
+themeBtn.onclick=()=>{
+  const cur = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', cur==='dark'?'light':'dark');
+};
+
+apply();
+</script>
+</body>
+</html>
