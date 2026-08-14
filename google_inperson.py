@@ -54,7 +54,7 @@ def g1_assign_students_to_apartments(students, apartments):
     Follow-ups: Minimize number of buildings used; add per-student cost; make it
       an assignment/flow problem if preferences get weighted.
     """
-    
+
     apartments.sort()
 
     privacy = []
@@ -85,7 +85,8 @@ def g1_assign_students_to_apartments(students, apartments):
 
 
 
-def g2_meeting_scheduling():
+from typing import List
+def g2_meeting_scheduling(meetings):
     """
     G2. Maximum Non-Overlapping Meetings
     Difficulty: Medium
@@ -97,6 +98,20 @@ def g2_meeting_scheduling():
     Follow-ups: Minimum rooms to hold all meetings (Meeting Rooms II, heap/sweep);
       weighted intervals -> DP.
     """
+    # sort it by ending not by beginning , check if start >= end , increment the counter
+    meetings.sort(key = lambda x : x[1])
+
+    count = 0
+    last_end = float("-inf")
+
+    for start, end in meetings:
+
+        if start >= last_end:
+            count += 1
+            last_end = end
+
+    return count
+
 
 
 def g3_assign_questions_to_volunteers():
@@ -110,9 +125,11 @@ def g3_assign_questions_to_volunteers():
       maximize matches (Hungarian / Hopcroft-Karp, or greedy if constraints allow).
     Follow-ups: Each volunteer max k questions; weighted by overlap size.
     """
+    # skipped this
 
 
-def g4_min_cpus_earliest_completion():
+import heapq
+def g4_min_cpus_earliest_completion(starts, L):
     """
     G4. Minimum CPUs for Earliest Task Completion
     Difficulty: Medium
@@ -123,6 +140,23 @@ def g4_min_cpus_earliest_completion():
     Approach: Sweep start times; a min-heap of CPU-free-times; reuse a CPU whose
       task finished, else allocate a new one; track peak concurrency.
     """
+    # sort by the start [1,2,3,4] , use heapq, compare min element with start, if possible to fit in, pop the finished one, else create a new cpu
+    starts.sort()
+
+    free_times = []
+
+    max_cpu = 0
+
+    for start in starts:
+
+        if free_times and free_times[0] <= start:
+            heapq.heappop(free_times)
+
+        heapq.heappush(free_times, start + L)
+
+        max_cpu = max(max_cpu, len(free_times))
+
+    return max_cpu
 
 
 def g5_n_cpus_m_tasks_min_time():

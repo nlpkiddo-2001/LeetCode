@@ -1336,6 +1336,34 @@ def mergeKLists(lists: List[Optional[ListNode]]) -> Optional[ListNode]:
             heapq.heappush(heap, (node.val, counter, node))
             counter += 1
 
+    dummy = ListNode(0)
+    tail = dummy
+
+    while heap:
+
+        val, _, node = heapq.heappop(heap)
+
+        tail.next = node
+        tail = tail.next
+
+        if node.next:
+            heapq.heappush(heap, (node.next.val, counter, node))
+            counter += 1
+
+    return dummy.next
+
+
+
+
+def mergeKLists(lists: List[Optional[ListNode]]) -> Optional[ListNode]:
+    heap = []
+    counter = 0
+
+    for node in lists:
+        if node:
+            heapq.heappush(heap, (node.val, counter, node))
+            counter += 1
+
 
     dummy = ListNode(0)
     tail = dummy
@@ -2907,3 +2935,56 @@ def getSum(a: int, b: int) -> int:
         b = carry & MASK
 
     return a if a <= MAX_INT else ~(a ^ MASK)
+
+
+import heapq
+from collections import Counter
+
+def top_k_frequent(stream, k):
+    freq = Counter(stream)
+
+    heap = []
+
+    for element, count in freq.items():
+
+        heapq.heappush(heap, (count, element))
+
+        if len(heap) > k:
+            heapq.heappop(heap)
+
+    return [element for _, element in heap]
+
+
+stream = ["A", "B", "A", "C", "B", "A", "D", "C", "A"]
+print(top_k_frequent(stream, 2))
+
+
+def has_cycle(graph):
+
+    state = [0] * len(graph)
+
+    def dfs(node):
+
+        if state[node] == 1:
+            return True
+
+        if state[node] == 2:
+            return False
+
+        state[node] = 1
+
+        for nei in graph[node]:
+
+            if dfs(nei):
+                return True
+
+        state[node] = 2
+
+        return False
+
+    for node in range(len(graph)):
+
+        if dfs(node):
+            return True
+
+    return False
