@@ -2988,3 +2988,34 @@ def has_cycle(graph):
             return True
 
     return False
+
+
+def reversePairs(nums):
+
+    def mergeSort(left, right):
+
+        if right - left <= 1:
+            return
+
+        mid = (left + right) // 2
+
+        count = 0
+
+        count += mergeSort(left, mid)
+        count += mergeSort(mid, right)
+
+        j = 0
+
+        for i in range(left, mid):
+
+            while j < right and nums[i] > 2 * nums[j]:
+                j += 1
+
+            count += j - mid
+
+        nums[left:right] = sorted(nums[left:right])
+
+        return count
+
+    return mergeSort(0, len(nums))
+
