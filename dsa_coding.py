@@ -4,6 +4,7 @@ import math
 
 from numba.cuda.libdevice import fast_logf
 from sympy import false
+from tomlkit import key
 
 
 #1. two sum
@@ -3018,4 +3019,38 @@ def reversePairs(nums):
         return count
 
     return mergeSort(0, len(nums))
+
+
+
+import heapq
+
+class PriorityMap:
+
+    def __init__(self):
+        self.data = {}
+        self.heap = []
+
+    def insert(self, key, priority):
+
+        self.data[key] = priority
+
+        heapq.heappush(
+            self.heap,
+            (-priority, key)
+        )
+
+    def update(self):
+
+        while self.heap:
+
+            neg_priority , key = self.heap[0]
+            priority = -neg_priority
+
+
+            if self.data[key] == priority:
+                return key
+
+            heapq.heappop(self.heap)
+
+        return None
 

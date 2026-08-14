@@ -44,7 +44,6 @@ def dsa_repeated_questions():
         7.  Invalid Transactions.                                  (LC 1169)
         8.  Zigzag Conversion.                                     (LC 6)
         9.  Generics / type-safe code (Java) - write a generic container.
-        10. Data-structure design + DB schema design (manager round).
 
     [EXPECTED] PATTERNS TO DRILL (eBay leans on these)
         - Hash map: frequency, grouping, two-sum family, dedup.
