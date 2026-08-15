@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pretraining — interview study guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F5F2;
+    --ink:#17201C;
+    --ink2:#4A554E;
+    --accent:#146B54;
+    --accent-soft:#E4EEEA;
+    --amber:#A8531B;
+    --amber-soft:#F5EADD;
+    --rule:#D8DDD6;
+    --code:#E9ECE7;
+    --disp:"Space Grotesk",sans-serif;
+    --body:"Newsreader",Georgia,serif;
+    --mono:"IBM Plex Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--body);font-size:19px;line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 28px 120px}
+
+  header{padding:72px 0 40px;border-bottom:2px solid var(--ink)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 18px}
+  h1{font-family:var(--disp);font-weight:600;font-size:46px;line-height:1.04;
+    letter-spacing:-.02em;margin:0 0 24px}
+  .thesis{font-size:22px;line-height:1.5;color:var(--ink);margin:0;max-width:640px}
+  .thesis b{font-weight:500;box-shadow:inset 0 -.5em 0 var(--accent-soft)}
+
+  nav{margin:40px 0 0;padding:22px 0;border-bottom:1px solid var(--rule)}
+  nav p{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink2);margin:0 0 14px}
+  nav ol{margin:0;padding:0;list-style:none;
+    display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;
+    font-family:var(--disp);font-size:15px}
+  nav a{color:var(--ink);text-decoration:none;display:flex;gap:10px;padding:3px 0}
+  nav a:hover{color:var(--accent)}
+  nav a .n{font-family:var(--mono);font-size:12px;color:var(--accent);
+    min-width:22px;padding-top:2px}
+
+  section{padding:54px 0 0;scroll-margin-top:20px}
+  .num{font-family:var(--mono);font-size:13px;color:var(--accent);
+    letter-spacing:.1em;margin:0 0 8px}
+  h2{font-family:var(--disp);font-weight:600;font-size:30px;line-height:1.1;
+    letter-spacing:-.015em;margin:0 0 26px;padding-bottom:0}
+
+  .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ink2);margin:30px 0 10px;
+    display:flex;align-items:center;gap:12px}
+  .lbl::after{content:"";flex:1;height:1px;background:var(--rule)}
+
+  p{margin:0 0 16px}
+  .plain{font-size:19px}
+  .tech{font-size:17.5px}
+  strong{font-weight:500}
+  code{font-family:var(--mono);font-size:.82em;background:var(--code);
+    padding:2px 6px;border-radius:4px;color:var(--ink)}
+  .term{color:var(--accent);font-weight:500}
+
+  .push{background:var(--amber-soft);border-left:3px solid var(--amber);
+    padding:18px 22px;margin:26px 0 6px;border-radius:0 6px 6px 0}
+  .push .plabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--amber);margin:0 0 8px;font-weight:600}
+  .push p{margin:0;font-size:17px}
+  .push p+p{margin-top:12px}
+
+  .formula{background:var(--ink);color:#EAF0ED;font-family:var(--mono);
+    font-size:15px;line-height:1.7;padding:20px 24px;border-radius:8px;
+    margin:20px 0;overflow-x:auto}
+  .formula .hl{color:#7FD4B8}
+
+  .line{border:0;border-top:1px solid var(--rule);margin:52px 0 0}
+
+  .oneliner{background:var(--accent-soft);border-radius:8px;padding:16px 20px;
+    margin:20px 0 6px}
+  .oneliner .plabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 6px;font-weight:600}
+  .oneliner p{margin:0;font-size:17px;font-style:italic}
+
+  .cheat{margin-top:70px;padding:38px 34px;background:var(--ink);
+    border-radius:12px;color:#E4EAE7}
+  .cheat h2{color:#fff;margin-bottom:24px}
+  .cheat dl{margin:0}
+  .cheat dt{font-family:var(--disp);font-weight:500;font-size:16px;
+    color:#7FD4B8;margin:18px 0 4px}
+  .cheat dd{margin:0;font-size:16px;line-height:1.55;color:#CBD5D0}
+  .cheat dd:first-of-type{margin-top:0}
+
+  footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--rule);
+    font-family:var(--mono);font-size:12px;color:var(--ink2);letter-spacing:.04em}
+
+  @media(max-width:640px){
+    h1{font-size:34px}.thesis{font-size:19px}h2{font-size:25px}
+    nav ol{grid-template-columns:1fr}body{font-size:18px}
+    header{padding:48px 0 32px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Interview prep · pretraining internals</p>
+  <h1>The training framework, concept by concept</h1>
+  <p class="thesis">One idea holds the whole project together: <b>training throughput comes down to two things — fitting the model in GPU memory, and never letting the GPUs sit idle.</b> Almost every knob below serves one of those two. Open your answer with this line and everything after it sounds deliberate.</p>
+</header>
+
+<nav>
+  <p>The concepts</p>
+  <ol>
+    <li><a href="#s1"><span class="n">01</span> What lives in GPU memory</a></li>
+    <li><a href="#s2"><span class="n">02</span> DDP — data parallelism</a></li>
+    <li><a href="#s3"><span class="n">03</span> FSDP — when DDP isn't enough</a></li>
+    <li><a href="#s4"><span class="n">04</span> BF16 mixed precision</a></li>
+    <li><a href="#s5"><span class="n">05</span> torch.compile & matmul precision</a></li>
+    <li><a href="#s6"><span class="n">06</span> Gradient accumulation</a></li>
+    <li><a href="#s7"><span class="n">07</span> MFU & the 6ND rule</a></li>
+    <li><a href="#s8"><span class="n">08</span> AdamW vs Muon</a></li>
+    <li><a href="#s9"><span class="n">09</span> LR schedules & WSD</a></li>
+    <li><a href="#s10"><span class="n">10</span> Checkpointing & auto-resume</a></li>
+    <li><a href="#s11"><span class="n">11</span> Pretrain / mid-train / fine-tune</a></li>
+    <li><a href="#s12"><span class="n">12</span> Distributed data loading</a></li>
+    <li><a href="#s13"><span class="n">13</span> Batch size scheduling</a></li>
+  </ol>
+</nav>
+
+<section id="s1">
+  <p class="num">01</p>
+  <h2>What actually lives in GPU memory</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">People think a model "fits" if the weights fit. That's the trap. When you train, the GPU has to hold far more than the weights. Picture four buckets sharing one GPU: the model's weights, a copy of the gradients (one number per weight), the optimizer's memory of each weight, and the activations — all the intermediate numbers from the forward pass that you have to keep around so you can compute the backward pass. The optimizer bucket is sneaky-big, and the activations bucket grows with how big your batch is. So "will it fit" is really "will all four buckets fit at once."</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech">For a model with <span class="term">N</span> parameters, training memory is roughly: <strong>weights</strong> (N), <strong>gradients</strong> (N), and <strong>optimizer state</strong> — for <code>AdamW</code> that's two moments per parameter (2N), plus often an FP32 master copy of the weights. That's why a 1.2B model needs several times 1.2B worth of memory before you've stored a single activation. <strong>Activations</strong> scale with <code>batch × sequence_length × layers</code> and are usually what you trade away first (via gradient accumulation or activation checkpointing). Your 1.2B GPT fits comfortably on one 80GB H100 with room for activations — which is the fact that makes plain DDP the correct choice.</p>
+  <div class="oneliner">
+    <p class="plabel">The one-liner</p>
+    <p>"Fitting a model isn't about the weights — it's weights plus gradients plus optimizer state plus activations, all resident at once. Optimizer state for Adam alone is 2× the parameter count."</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s2">
+  <p class="num">02</p>
+  <h2>DDP — how multi-GPU training actually works</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">You've got 8 GPUs and you want them to train one model together. DDP's idea is simple: put a full copy of the model on every GPU, and give each GPU a different slice of the batch. Each one does its own forward and backward pass on its own data, so each ends up with slightly different gradients. Then — the key step — all 8 GPUs get on a call, average their gradients together, and everyone applies the same averaged update. So all 8 copies stay perfectly in sync, step after step. It's like 8 students reading different pages of the same book, then pooling their notes so they all learn the same thing.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech"><code>DistributedDataParallel</code> replicates the full model on each rank. Each rank processes a distinct micro-batch (data parallelism), producing local gradients. Before the optimizer step, gradients are synchronized with an <span class="term">all-reduce</span> — every rank ends up with the averaged gradient. DDP overlaps this communication with the backward pass by bucketing gradients and firing the all-reduce as soon as each bucket is ready, so comms hide behind compute. You launch it with <code>torchrun --nproc_per_node=8</code>, which spins up one process per GPU. Because the whole model must fit on a single GPU, DDP is only valid when it does — which is exactly your case.</p>
+  <div class="push">
+    <p class="plabel">If they push</p>
+    <p><strong>"Does every GPU have the whole model?"</strong> — Yes, that's the defining trait of DDP, and its limitation: it scales your throughput, not your model size. The moment the model doesn't fit on one GPU, DDP breaks and you need FSDP (next section).</p>
+    <p><strong>"What's communicated between GPUs?"</strong> — Only gradients, once per step, via all-reduce. Not activations, not weights.</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s3">
+  <p class="num">03</p>
+  <h2>FSDP — the answer for models too big for one GPU</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">DDP falls apart when the model itself won't fit on a single GPU — because DDP needs a full copy on each one. FSDP fixes this by refusing to keep a full copy anywhere. Instead it chops the model into shards and scatters them across the GPUs, so each GPU permanently holds only a slice. When it's time to run a particular layer, the GPUs quickly gather just that layer's weights, use them, then throw them away and free the memory. So at any instant, no GPU is holding the whole model — which is how you train something far bigger than one card could ever hold.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech"><span class="term">FSDP</span> (Fully Sharded Data Parallel) shards parameters, gradients, and optimizer state across ranks. For each layer's forward/backward, it does an <code>all-gather</code> to reconstruct that layer's full weights just-in-time, computes, then frees them; gradients are reduced with <code>reduce-scatter</code> so each rank keeps only its shard. The trade versus DDP is more communication (gather/scatter every layer) in exchange for a much lower per-GPU memory footprint. It's the same underlying idea as DeepSpeed ZeRO stage 3.</p>
+  <div class="oneliner">
+    <p class="plabel">The one-liner</p>
+    <p>"I used DDP because a 1.2B model fits on a single H100. FSDP is the first thing I'd reach for to train something that doesn't fit — it shards the model so no GPU holds the whole thing, trading extra communication for lower memory."</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s4">
+  <p class="num">04</p>
+  <h2>BF16 mixed precision — and why not FP16</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">A number can be stored with lots of digits (full precision, FP32) or fewer (half precision). Fewer digits means less memory to store and less data to move, which makes training faster — the whole reason we do "mixed precision." But there are two flavours of half precision, and the choice matters a lot. FP16 can store fine detail but has a narrow range — very small or very large numbers overflow or vanish, and gradients in training are often tiny, so they silently disappear. BF16 sacrifices a little fine detail to keep the exact same range as full precision, so nothing overflows and nothing vanishes. On modern GPUs that trade is almost always worth it, which is why BF16 is the default for training big models.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech">Both are 16-bit, but they split the bits differently. <span class="term">FP16</span>: 5 exponent bits, 10 mantissa — more precision, narrow dynamic range, so it needs <code>loss scaling</code> to stop small gradients underflowing to zero. <span class="term">BF16</span>: 8 exponent bits (identical range to FP32), 7 mantissa — less precision, but the wide range means <strong>no loss scaling and no overflow drama</strong>. In practice you run matmuls in BF16 via autocast while keeping sensitive ops (softmax, layernorm, the loss) and the optimizer's master weights in FP32. The H100 has native BF16 tensor cores, so it's fast and stable.</p>
+  <div class="push">
+    <p class="plabel">If they push</p>
+    <p><strong>"Why BF16 over FP16?"</strong> — BF16 keeps FP32's exponent range, so I don't need loss scaling and I don't hit the underflow/overflow issues FP16 has. I give up a little mantissa precision, which doesn't matter for training stability.</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s5">
+  <p class="num">05</p>
+  <h2>torch.compile & matmul precision — nearly free speed</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">Normally PyTorch runs your model one small operation at a time, with Python deciding what to do at each step — lots of little handoffs, each with overhead. <code>torch.compile</code> looks at your whole model once, fuses those little operations into a few big efficient chunks, and skips the repeated Python overhead. You change one line and get faster training. Separately, telling PyTorch it's allowed to do its big matrix multiplies slightly less precisely lets the GPU use its dedicated fast-math hardware — again, real speed for basically no downside on a model like this.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech"><code>torch.compile</code> traces the model into a graph and generates fused kernels (via TorchInductor), cutting Python and kernel-launch overhead. <code>torch.set_float32_matmul_precision("high")</code> permits <span class="term">TF32</span> on the tensor cores for FP32 matmuls — a truncated mantissa that runs far faster with negligible accuracy impact at pretraining scale. Both are throughput wins that don't change your model or math meaningfully.</p>
+  <div class="oneliner">
+    <p class="plabel">The one-liner</p>
+    <p>"torch.compile fuses the op-by-op execution into optimized kernels and removes Python overhead — a one-line change for real throughput. Raising matmul precision lets the tensor cores use TF32, which is faster for a tiny precision cost."</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s6">
+  <p class="num">06</p>
+  <h2>Gradient accumulation — a big batch on a small GPU</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">Big models train more stably with a big batch — lots of examples averaged together per update. But a big batch needs a lot of memory, and you might not have it. Gradient accumulation is the workaround: instead of doing one giant batch, you do several small ones back-to-back, add up their gradients as you go, and only do the actual weight update after you've been through all of them. The model can't tell the difference — it's mathematically the same as one big batch — but at any moment you only ever hold one small batch in memory. It's paying in time to buy the effect of memory you don't have.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech">Run <code>grad_accum</code> micro-batches, summing <code>.grad</code> across them, then call <code>optimizer.step()</code> once. Effective batch = <code>micro_batch × grad_accum × num_gpus</code>. It trades wall-clock time (more forward/backward passes per update) for a larger effective batch without the memory cost. With DDP there's a subtlety: you wrap the non-final micro-steps in <code>no_sync()</code> so the all-reduce only fires on the last one — otherwise you'd pay the communication cost every micro-step for nothing. Your config's <code>batch_size: 8, grad_accum: 16</code> gives an effective batch of 128 per GPU.</p>
+  <div class="push">
+    <p class="plabel">If they push</p>
+    <p><strong>"Is accumulation identical to a real large batch?"</strong> — For the gradient, yes (ignoring tiny numeric differences). The cost is throughput: you do N times the passes per optimizer step, so it's slower than if you genuinely had the memory for a batch that size.</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s7">
+  <p class="num">07</p>
+  <h2>MFU & the 6ND rule — the number they'll grill</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">A GPU has a top speed — a maximum number of math operations per second it can theoretically do. In real training you never hit that top speed, because time leaks into moving data around, waiting, and overhead. MFU is just: what fraction of the GPU's top speed did I actually use? If your GPU can do 100 units of work a second and your training is effectively doing 40, that's 40% MFU. It's the single cleanest measure of how efficient your training loop is — and around 40% is genuinely good, so it's a number worth stating and defending.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech"><span class="term">MFU</span> (Model FLOPs Utilization) = the useful model FLOPs you achieved ÷ the hardware's peak FLOPs. The useful part uses the <span class="term">6N rule</span>: training one token costs about <code>6 × N</code> FLOPs — roughly 2N for the forward pass and 4N for the backward. So:</p>
+  <div class="formula">MFU = <span class="hl">(6 · N · tokens_per_sec)</span> ÷ (num_gpus · peak_flops_per_gpu)<br><br>H100 BF16 peak ≈ <span class="hl">990 TFLOP/s</span>  (dense — NOT the ~1,979 "with sparsity" number)</div>
+  <p class="tech">Plug in your parameter count N, your measured tokens/sec, and the H100's dense BF16 peak. Use <strong>990</strong>, not the sparsity-marketing figure, or a sharp interviewer will catch you inflating it.</p>
+  <div class="push">
+    <p class="plabel">If they push</p>
+    <p><strong>"How did you compute 40% MFU?"</strong> — Recite the formula above: 6N FLOPs per token times tokens/sec, over GPUs times the H100's 990 TFLOP/s dense BF16 peak.</p>
+    <p><strong>"What limits MFU?"</strong> — Data loading stalls, communication not overlapping with compute, small batches, and memory-bandwidth-bound ops. Pushing MFU up is mostly about keeping the GPUs fed and hiding communication.</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s8">
+  <p class="num">08</p>
+  <h2>AdamW vs Muon — the optimizer question</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">The optimizer is the rule for how you nudge the weights after each batch. AdamW is the reliable default everyone uses: for each weight it remembers how the gradient has been trending and how bumpy it's been, and uses that to take smarter steps. Muon is a newer alternative that does something cleverer with the update for the big weight matrices in the model, and often learns from the same data more efficiently. The honest interview move is to explain what each does at a high level and be upfront that Muon is recent — don't pretend to know its deepest internals if you don't.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech"><span class="term">AdamW</span>: Adam with decoupled weight decay. It keeps two running estimates per parameter — first moment (mean of gradients) and second moment (variance) — which is why its optimizer state is ~2N. <span class="term">Muon</span> (Momentum Orthogonalized by Newton-Schulz) orthogonalizes the momentum update for the 2D weight matrices, which tends to improve sample efficiency. Standard practice — and what your repo does — is to use Muon for the hidden matrices and keep AdamW for embeddings, the LM head, and scalar/1D parameters.</p>
+  <div class="push">
+    <p class="plabel">If they push (honesty catch)</p>
+    <p><strong>"Why does Muon work / what's the Newton-Schulz part?"</strong> — If you know it: it's an iterative method to approximately orthogonalize the momentum matrix without a full SVD. <strong>If you don't:</strong> say exactly that — "I used it as a config option and benchmarked it against AdamW; I haven't studied the orthogonalization math deeply." That honesty scores higher than a wrong bluff, every time.</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s9">
+  <p class="num">09</p>
+  <h2>Learning-rate schedules & why WSD is nice</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">The learning rate is how big a step you take each update. You don't keep it fixed — you start tiny and ramp up (warmup, so you don't blow up early), then gradually bring it down as training settles (decay, so you fine-tune into a good spot). Cosine and linear are two shapes for that ramp-down. WSD is a different shape that's handy when you might want to continue training later: it warms up, then holds steady for a long stretch, then decays fast at the very end. Because the steady stretch doesn't commit to an ending, you can branch off or add more data from any point in it without having already burned through your learning rate.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech">All schedules start with a <span class="term">warmup</span> (linear ramp from ~0) to avoid early instability. <span class="term">Cosine</span> decays following a cosine curve to a small final LR — the common default. <span class="term">Linear</span> decays straight down. <span class="term">WSD</span> (Warmup-Stable-Decay) warms up, holds a constant LR for most of training, then decays sharply in a short final phase. Its advantage is <strong>decoupling schedule from total length</strong>: you can checkpoint anywhere in the stable phase and continue or branch — which is exactly why it suits continual pretraining and your multi-stage pipeline.</p>
+  <div class="oneliner">
+    <p class="plabel">The one-liner</p>
+    <p>"WSD keeps the learning rate flat through the middle and only decays at the end, so I can branch or resume from the stable phase without the schedule having already decayed away — ideal for continual pretraining."</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s10">
+  <p class="num">10</p>
+  <h2>Checkpointing & auto-resume — the engineering they respect</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">Big training runs go for days, and things crash — a machine dies, something runs out of memory. If a crash sends you back to zero, you've burned days of GPU time. So you periodically save your progress and make the run smart enough to pick up exactly where it left off. The catch most people miss: saving just the weights isn't enough. You also have to save the optimizer's memory, where you were in the learning-rate schedule, and which step you were on — otherwise when you resume, the learning rate is wrong and you re-run data you already trained on. And since these save files are huge, you keep only the last few and delete older ones so the disk doesn't fill.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech">A correct checkpoint saves <strong>model weights + optimizer state + LR-scheduler state + the global step count</strong> (ideally RNG state and data-loader position too). The step count is what lets the schedule and data pipeline resume consistently — save only weights and you restart at the wrong LR and re-shuffle already-seen data. Your pipeline <span class="term">auto-detects the latest checkpoint and resumes</span>, and does <span class="term">checkpoint rotation</span> — keeping only the last 3 — which is a direct storage-vs-history trade. It also handles PyTorch 2.6+ safe-loading (weights-only deserialization).</p>
+  <div class="push">
+    <p class="plabel">If they push</p>
+    <p><strong>"How does resume avoid re-training on the same data?"</strong> — Because the step count (and data-loader position) is in the checkpoint, so it continues from the exact point in the data stream, not from the top.</p>
+    <p><strong>"Why keep only 3 checkpoints?"</strong> — Checkpoints are large; rotation caps disk use. The trade is losing older training history you might have wanted for analysis.</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s11">
+  <p class="num">11</p>
+  <h2>Pretrain → mid-train → fine-tune</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">A model is built up in stages, like an education. First, pretraining: read an enormous pile of general text to learn language and broad knowledge — this is the long, expensive part. Then mid-training, also called continual pretraining: feed it more, usually higher-quality or domain-specific text to sharpen it further. Finally fine-tuning: train on task- or instruction-shaped examples so it behaves the way you want. Each stage starts from where the last one left off, and your pipeline chains them automatically — one stage saves a checkpoint, the next detects it and continues.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech"><span class="term">Pretraining</span>: self-supervised next-token prediction over a large general corpus. <span class="term">Mid-training / continual pretraining</span>: further pretraining on higher-quality or domain data, often with a short LR re-warmup — this is where WSD's stable phase pays off. <span class="term">Fine-tuning</span>: supervised training on task/instruction data at a lower LR to adapt behaviour without catastrophic forgetting. Your <code>run_pipeline.sh</code> runs the three sequentially, each stage auto-detecting the previous stage's checkpoint via the resume logic.</p>
+  <div class="oneliner">
+    <p class="plabel">The one-liner</p>
+    <p>"Pretraining learns general language from a huge corpus, mid-training continues on higher-quality or domain data, and fine-tuning adapts behaviour on task data at a lower learning rate — and the pipeline chains all three by auto-detecting each stage's checkpoint."</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s12">
+  <p class="num">12</p>
+  <h2>Distributed data loading</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">If all 8 GPUs read the same data, they'd all learn the same thing and you'd gain nothing from having 8. So the data has to be split so each GPU sees a different, non-overlapping slice every step. And it has to be fast: if the data pipeline can't feed the GPUs quickly enough, the GPUs sit there waiting — which is the number-one way your efficiency (that MFU number) quietly tanks. Keeping the GPUs fed is half the battle in training performance.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech">A distributed sampler shards the dataset by rank so each GPU processes disjoint micro-batches — this is what makes data parallelism actually parallel. For throughput, data is typically pre-tokenized and memory-mapped (or streamed) so tokenization isn't on the hot path, with enough loader workers and prefetching that input never stalls the GPU. This ties straight back to the framework's thesis: <strong>keeping the GPUs fed</strong> is the second half of MFU, right alongside fitting the model.</p>
+  <div class="push">
+    <p class="plabel">If they push</p>
+    <p><strong>"What if data loading is the bottleneck?"</strong> — The GPUs idle waiting for input and MFU drops. Fixes: pre-tokenize and memory-map so there's no per-step tokenization, add loader workers, and prefetch batches so the next one is ready before the current step finishes.</p>
+  </div>
+</section>
+
+<hr class="line">
+
+<section id="s13">
+  <p class="num">13</p>
+  <h2>Batch size scheduling</h2>
+  <p class="lbl">In plain English</p>
+  <p class="plain">Instead of one fixed batch size the whole way through, you can start small and grow it as training goes on. Early on, smaller, noisier batches actually help the model explore and not settle too fast; later, bigger batches give smoother, more stable updates and better GPU efficiency. Your framework grows the batch over time — doubling it at set intervals — to get the best of both phases.</p>
+  <p class="lbl">The technical version</p>
+  <p class="tech">A <code>batch_size_schedule</code> increases the effective batch during training (e.g. a doubling strategy every <code>interval_steps</code>). The intuition: small batches early provide beneficial gradient noise for exploration, while larger batches later reduce variance and improve throughput. In your repo this is realized by scaling gradient accumulation, so the effective batch grows without needing more memory.</p>
+  <div class="oneliner">
+    <p class="plabel">The one-liner</p>
+    <p>"I ramp the effective batch size up over training — small and noisy early for exploration, large and stable later for smoother convergence and better throughput — implemented through gradient accumulation so memory stays flat."</p>
+  </div>
+</section>
+
+<div class="cheat">
+  <h2>The seven lines to have on your tongue</h2>
+  <dl>
+    <dt>The thesis</dt>
+    <dd>Training throughput is two things: fitting the model in memory, and keeping the GPUs fed.</dd>
+    <dt>DDP</dt>
+    <dd>Full model copy per GPU, different data slice each, gradients averaged by all-reduce. Valid because 1.2B fits on one H100.</dd>
+    <dt>BF16</dt>
+    <dd>Same exponent range as FP32, so no loss scaling and no overflow — unlike FP16.</dd>
+    <dt>MFU</dt>
+    <dd>6·N·tokens/sec ÷ (GPUs · 990 TFLOP/s). Around 40% is strong. Use the dense peak, not the sparsity number.</dd>
+    <dt>Checkpoint</dt>
+    <dd>Save weights + optimizer state + scheduler + step count — or you resume at the wrong LR and re-see data.</dd>
+    <dt>WSD</dt>
+    <dd>Flat learning rate through the middle, decay only at the end — so I can branch or continue from the stable phase.</dd>
+    <dt>Muon (honesty)</dt>
+    <dd>Orthogonalizes momentum for the 2D matrices; AdamW for embeddings and scalars. If they go deeper than I know, I say so.</dd>
+  </dl>
+</div>
+
+<footer>
+  Pretraining study guide · built for interview prep · repo: nlpkiddo-2001/PYDeepLearning
+</footer>
+
+</div>
+</body>
+</html>
