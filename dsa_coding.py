@@ -5,6 +5,7 @@ import math
 from numba.cuda.libdevice import fast_logf
 from sympy import false
 from tomlkit import key
+from toolz import tail
 
 
 #1. two sum
@@ -68,7 +69,6 @@ def mergeIntervals(big_list:List[List[int]]):
 
     return result_list
 #####################################################################################################################################################################################################################
-from typing import List
 
 class Node:
     def __init__(self, val: int):
@@ -316,12 +316,6 @@ def isAnagram(s: str, t: str):
             value_count = hashMap2.get(char)
             hashMap2[char] = value_count + 1
 
-    hashMap1_keys = sorted(list(hashMap1.keys()))
-    hashMap2_keys = sorted(list(hashMap2.keys()))
-
-    hashMap1 = {i : hashMap1[i] for i in hashMap1_keys}
-    hashMap2 = {i : hashMap2[i] for i in hashMap2_keys}
-
     if hashMap1 == hashMap2:
         return True
     else:
@@ -388,11 +382,11 @@ class Solution:
         i = 0
         while i < len(strs):
             j = i
-            while s[j] != "#":
+            while strs[j] != "#":
                 j += 1
             j += 1
-            length = int(s[i:j])
-            sub_string = s[j : j + length]
+            length = int(strs[i:j])
+            sub_string = strs[j : j + length]
             result.append(sub_string)
             i = j + length
 
@@ -505,7 +499,8 @@ A palindrome is a string that reads the same forward and backward. It is also ca
 
 import re
 def isPalindrome(s: str) -> bool:
-    s = re.sub(r'[^a-zA-Z0-9]', '', s)
+    # s = re.sub(r'[^a-zA-Z0-9]', '', s)
+    s = re.sub(r'[^a-zA-Z0-9]','',s)
     s = s.lower()
     n = len(s)
     i = 0
@@ -707,6 +702,7 @@ def minWindow(s: str, t: str) -> str:
         while have == need:
             if (r - l + 1) < resLen:
                 res = [l , r]
+
                 resLen = (r - l + 1)
 
             window[s[l]] = window.get(s[l], 0) - 1
@@ -719,6 +715,10 @@ def minWindow(s: str, t: str) -> str:
     l, r = res
     return s[l : r + 1] if resLen != float('infinity') else ""
 
+s = "OUZODYXAZV"
+t = "XYZ"
+
+print(minWindow(s, t))
 
 #####################################################################################################################################################################################################################
 def isValid(s: str) -> bool:
@@ -1029,6 +1029,7 @@ def search_rotated_sorted_array(nums: List[int], target: int):
 
         if nums[mid] == target:
             return mid
+
 
 
         if nums[l] <= nums[mid]:

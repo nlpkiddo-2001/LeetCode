@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview Script · Voice AI Agent for a Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1220; --ink-2:#111B2E; --ink-3:#18253C;
+    --paper:#F5F6F8; --surface:#FFFFFF;
+    --text:#15202E; --muted:#5B6775; --faint:#8A93A0;
+    --line:#E3E7ED; --line-2:#EEF1F5;
+    --cyan:#12C2E9; --cyan-deep:#0A7E99; --cyan-ink:#7EE7F7;
+    --amber:#F5A524; --amber-deep:#B9770E;
+    --green:#2FBF71; --red:#E5484D; --violet:#8B7DF6;
+    --shadow: 0 1px 2px rgba(11,18,32,.06), 0 8px 30px rgba(11,18,32,.06);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{animation:none!important;transition:none!important} }
+  body{margin:0; background:var(--paper); color:var(--text);
+    font-family:'Inter',system-ui,sans-serif; font-size:16.5px; line-height:1.62; -webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif; line-height:1.15; margin:0; letter-spacing:-.01em}
+  code,.mono{font-family:'JetBrains Mono',monospace}
+  a{color:var(--cyan-deep)}
+
+  /* HERO */
+  .hero{background:radial-gradient(1200px 600px at 72% -10%, #1b3350 0%, var(--ink) 55%);
+    color:#E8EEF6; padding:60px 24px 46px; border-bottom:1px solid #0a0f19;}
+  .hero-inner{max-width:1000px; margin:0 auto}
+  .kicker{font-family:'JetBrains Mono',monospace; font-size:12.5px; letter-spacing:.28em;
+    text-transform:uppercase; color:var(--cyan-ink); opacity:.9; margin-bottom:20px}
+  .hero h1{font-size:clamp(28px,4.6vw,46px); font-weight:700; color:#fff; max-width:20ch}
+  .hero h1 em{font-style:normal;color:var(--cyan)}
+  .hero .sub{margin-top:18px; max-width:64ch; color:#AEBBCC; font-size:16.5px}
+  .mic{display:inline-flex;align-items:center;gap:9px;margin-top:26px;font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;color:#C6D3E4;border:1px solid #2a3c56;border-radius:999px;padding:8px 14px}
+  .mic .rec{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red)}
+
+  /* LAYOUT */
+  .layout{max-width:1120px; margin:0 auto; display:grid; grid-template-columns:210px 1fr; gap:0; padding:0 24px}
+  nav.toc{position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto; padding:36px 20px 40px 0; border-right:1px solid var(--line)}
+  nav.toc .toc-title{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); margin-bottom:14px}
+  nav.toc a{display:flex; justify-content:space-between; gap:8px; text-decoration:none; color:var(--muted);
+    font-size:13px; padding:5px 0 5px 12px; border-left:2px solid transparent; transition:.15s}
+  nav.toc a:hover{color:var(--text)}
+  nav.toc a.active{color:var(--cyan-deep); border-left-color:var(--cyan); font-weight:600}
+  nav.toc a .mm{font-family:'JetBrains Mono',monospace; color:var(--faint); font-size:10.5px}
+
+  main{padding:38px 0 40px 40px; min-width:0}
+  section{padding:28px 0 14px; scroll-margin-top:16px}
+  section + section{border-top:1px solid var(--line-2)}
+  .beat-head{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:6px}
+  .beat-no{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan-deep); font-weight:700}
+  h2{font-size:clamp(21px,2.8vw,27px); font-weight:700}
+  .clock{margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--faint);
+    border:1px solid var(--line); border-radius:999px; padding:3px 10px}
+  .goal{font-size:13.5px; color:var(--muted); font-style:italic; margin:2px 0 4px}
+
+  /* SPOKEN block — the words you actually say */
+  .say{position:relative; background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--cyan);
+    border-radius:12px; padding:16px 18px 16px 20px; margin:16px 0; font-size:16.5px; box-shadow:var(--shadow)}
+  .say::before{content:"SAY"; position:absolute; top:-9px; left:16px; background:var(--cyan-deep); color:#fff;
+    font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.12em; padding:2px 8px; border-radius:6px}
+  .say p{margin:9px 0}
+  .say p:first-child{margin-top:4px}
+  .say strong{color:var(--ink-2); font-weight:600}
+  .say .pause{color:var(--faint); font-style:italic; font-size:13.5px}
+
+  /* asides */
+  .aside{border-radius:12px; padding:13px 16px; margin:14px 0; font-size:14px; border:1px solid var(--line)}
+  .aside .h{font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:5px; font-weight:700}
+  .aside p{margin:5px 0}
+  .signal{background:#F0FBFD; border-color:#BEEBF3}
+  .signal .h{color:var(--cyan-deep)}
+  .ifask{background:#F7F5FF; border-color:#DAD3FB}
+  .ifask .h{color:#6152c9}
+  .board{background:#FEF7EC; border-color:#F6E0B8}
+  .board .h{color:var(--amber-deep)}
+  .aside.ifask .q{font-weight:600;color:var(--ink-2)}
+
+  figure{margin:20px 0; padding:18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
+  figure svg{width:100%;height:auto;display:block}
+  figcaption{font-size:12.5px;color:var(--muted);margin-top:12px;font-family:'JetBrains Mono',monospace;text-align:center}
+
+  .budget{display:flex;width:100%;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--line);margin-top:8px}
+  .budget .seg{display:flex;flex-direction:column;justify-content:center;padding:0 10px;color:#fff;min-width:0}
+  .budget .seg small{font-family:'JetBrains Mono',monospace;font-size:11px;opacity:.9}
+  .budget .seg b{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .blabels{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint);margin-top:6px}
+
+  ul,ol{margin:10px 0;padding-left:22px} li{margin:6px 0}
+  .tw{overflow-x:auto;margin:14px 0}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--line-2);font-weight:700}
+  td.mono{font-family:'JetBrains Mono',monospace;color:var(--ink-2)}
+
+  .footer{max-width:1120px;margin:0 auto;padding:32px 24px 60px;color:var(--faint);font-size:13px;font-family:'JetBrains Mono',monospace}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr} nav.toc{display:none} main{padding:26px 0} }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="kicker">System Design Round · Spoken Script</div>
+    <h1>How I'd talk through the <em>voice AI bank agent</em>, out loud</h1>
+    <p class="sub">Same design as the deep-dive doc — but written as the actual words I'd say in the room, beat by beat. The <b style="color:#7EE7F7">SAY</b> blocks are my lines. The side notes are what I'm signaling, what I'd draw, and the follow-ups I'm ready for. Rehearse it until it's yours, not memorized.</p>
+    <div class="mic"><span class="rec"></span> ~40 min walkthrough · lead with the crux, then two deep dives</div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="toc" id="toc">
+    <div class="toc-title">Beats</div>
+    <a href="#open"><span>Open & clarify</span><span class="mm">2m</span></a>
+    <a href="#reqs"><span>Requirements</span><span class="mm">3m</span></a>
+    <a href="#math"><span>Capacity math</span><span class="mm">3m</span></a>
+    <a href="#crux"><span>The 500ms crux</span><span class="mm">5m</span></a>
+    <a href="#arch"><span>Draw the architecture</span><span class="mm">5m</span></a>
+    <a href="#turn"><span>Walk one turn</span><span class="mm">3m</span></a>
+    <a href="#bargein"><span>Deep dive: barge-in</span><span class="mm">4m</span></a>
+    <a href="#lang"><span>Deep dive: languages</span><span class="mm">4m</span></a>
+    <a href="#safety"><span>Dialog safety</span><span class="mm">3m</span></a>
+    <a href="#scale"><span>Scaling</span><span class="mm">3m</span></a>
+    <a href="#ha"><span>Availability</span><span class="mm">2m</span></a>
+    <a href="#sec"><span>Compliance</span><span class="mm">2m</span></a>
+    <a href="#wrap"><span>Wrap-up</span><span class="mm">1m</span></a>
+  </nav>
+
+  <main>
+
+  <!-- OPEN -->
+  <section id="open">
+    <div class="beat-head"><span class="beat-no">BEAT 01</span><h2>Open &amp; clarify</h2><span class="clock">⏱ ~2 min</span></div>
+    <p class="goal">Goal: don't draw anything yet. Show I understand what kind of problem this really is.</p>
+    <div class="say">
+      <p>"Okay, so before I start drawing, let me make sure I'm scoping this right. This is a real-time voice agent for a bank, taking millions of calls a day. A few quick clarifying questions —</p>
+      <p>Is this <strong>inbound only</strong>, or outbound too? I'll assume inbound. Is it <strong>open-ended conversation</strong>, or task-bounded — balance, statements, card block, transfers? I'll assume task-bounded self-service with a fallback to a human. And are we <strong>building the ML models ourselves</strong>, or assembling best-in-class speech and language services? I'll assume we're assembling them and owning the orchestration.</p>
+      <p>The thing I want to flag up front is — this looks like a chatbot problem, but it really isn't. It's a <strong>real-time streaming media system</strong> with a machine-learning backend. The hard part isn't the AI being smart, it's turning a spoken turn around in under half a second, while people talk over it, in a dozen languages, without ever going down. So everything I design is going to be driven by three constraints: <strong>sub-500-millisecond latency, barge-in, and banking-grade reliability and compliance.</strong>"</p>
+    </div>
+    <div class="aside signal"><div class="h">What I'm signaling</div><p>Naming the problem type — "streaming media system, not a chatbot" — in the first minute is the single highest-value thing I can say. It tells the interviewer I've seen this class of problem before.</p></div>
+  </section>
+
+  <!-- REQS -->
+  <section id="reqs">
+    <div class="beat-head"><span class="beat-no">BEAT 02</span><h2>Requirements, out loud</h2><span class="clock">⏱ ~3 min</span></div>
+    <p class="goal">Goal: separate functional from non-functional, and let the non-functional ones carry the weight.</p>
+    <div class="say">
+      <p>"On the <strong>functional</strong> side it's fairly clear: answer the call, transcribe speech in real time, figure out intent, respond in a natural voice, let the caller interrupt, work across Indian languages, authenticate the caller, actually execute banking actions, and hand off to a human when needed.</p>
+      <p>The <strong>non-functional</strong> requirements are where the real design lives, so let me pin those. <strong>Latency</strong> — under 500 milliseconds from when the caller stops talking to when the agent starts talking, P50, and I'd aim under 800 at P95. <strong>Availability</strong> — 99.99, so call it four nines, because a live call can't be retried later. <strong>Scale</strong> — I'll size that in a second. <strong>Accuracy</strong> — low word-error-rate across accents and languages, and near-zero wrong transactions, which matters more than sounding fluent. And <strong>compliance</strong> — this is a bank in India, so RBI data localization and PCI are design drivers, not an afterthought."</p>
+    </div>
+    <div class="aside board"><div class="h">One line worth adding</div><p>"Also worth noting — phone audio is narrowband 8-kilohertz, which is genuinely harder for speech recognition than clean mic audio, so my models have to be tuned for telephony, accents, and code-mixing." That detail reads as real-world experience.</p></div>
+  </section>
+
+  <!-- MATH -->
+  <section id="math">
+    <div class="beat-head"><span class="beat-no">BEAT 03</span><h2>Capacity math</h2><span class="clock">⏱ ~3 min</span></div>
+    <p class="goal">Goal: get to concurrency — that's the number the whole system hangs off.</p>
+    <div class="say">
+      <p>"Let me put some numbers on it so the design has something to stand on. Say <strong>5 million calls a day</strong>, average call around <strong>3 minutes</strong>. The number I actually care about is concurrency.</p>
+      <p>So — 5 million calls times 180 seconds, divided by 86,400 seconds in a day — that's roughly <strong>ten thousand four hundred concurrent calls on average</strong>. Bank traffic is bursty though — mornings, salary day, month-end, festivals — so I'll apply a peak factor of about three-and-a-half. That gives me <strong>somewhere around 35 to 40 thousand concurrent sessions at peak</strong>, and that's the number I'll design the hot path around."</p>
+    </div>
+    <div class="say">
+      <p>"And the important insight for capacity is: <strong>not every call uses every resource every second</strong>. Speech recognition runs continuously for the whole call. But text-to-speech only runs while the agent is actually speaking — maybe 40% of the time. And the language model only fires during a turn. So I size each GPU pool to its real duty cycle, not to raw call volume. That's how you keep the GPU bill sane."</p>
+    </div>
+    <div class="aside ifask"><div class="h">If they ask "how many GPUs?"</div><p class="q">Give a method, not a fake number.</p><p>"Order of magnitude, streaming ASR might handle 40–80 live streams per GPU, so hundreds of GPUs for that alone; the LLM I'd batch aggressively so it's far more efficient per request; TTS sits in between. But I'd never commit to exact numbers without load-testing — the real figure depends on model size, GPU type, and quantization."</p></div>
+  </section>
+
+  <!-- CRUX -->
+  <section id="crux">
+    <div class="beat-head"><span class="beat-no">BEAT 04</span><h2>The 500 ms crux</h2><span class="clock">⏱ ~5 min</span></div>
+    <p class="goal">Goal: this is the beat that wins the interview. Slow down and nail it.</p>
+    <div class="say">
+      <p>"Okay, this is the heart of the whole problem, so let me spend a minute here. The naive design is a pipeline: transcribe the whole thing, send it to the language model, wait for the full answer, synthesize the whole reply, play it. If I do that <strong>sequentially, I'm looking at one-and-a-half to two seconds</strong> — I've already blown the budget three times over.</p>
+      <p>The key insight is that every stage has to <strong>stream</strong>, and the stages have to <strong>overlap in time</strong>. Speech recognition emits partial transcripts continuously. So the language model can start composing its answer <strong>before the caller has even finished</strong>, on the partial. And text-to-speech can start voicing the first few words <strong>before the language model has finished generating</strong> the rest. What I'm actually optimizing is <strong>time-to-first-audio</strong>, not total processing time."</p>
+    </div>
+    <div class="aside board"><div class="h">Draw this on the board</div><p>Three overlapping horizontal bars — ASR, then LLM starting partway into it, then TTS starting partway into that. The moment TTS starts is "agent speaks." That single sketch communicates the whole idea faster than any sentence.</p></div>
+    <figure>
+      <svg viewBox="0 0 720 200" role="img" aria-label="Overlapping timeline of ASR, LLM and TTS">
+        <style>.lane{font:600 12px 'JetBrains Mono',monospace;fill:#5B6775}.barlbl{font:600 12px 'Inter',sans-serif;fill:#fff}.tick{font:11px 'JetBrains Mono',monospace;fill:#8A93A0}</style>
+        <line x1="150" y1="24" x2="700" y2="24" stroke="#E3E7ED"/>
+        <text class="tick" x="150" y="16">caller stops</text>
+        <text class="tick" x="640" y="16">first audio</text>
+        <text class="lane" x="12" y="54">ASR</text><rect x="150" y="40" width="66" height="22" rx="5" fill="#0A7E99"/><text class="barlbl" x="158" y="56">finalize</text>
+        <text class="lane" x="12" y="96">LLM</text><rect x="150" y="82" width="56" height="22" rx="5" fill="#8B7DF6" opacity=".45"/><rect x="206" y="82" width="190" height="22" rx="5" fill="#8B7DF6"/><text class="barlbl" x="216" y="98">generate →</text>
+        <text class="lane" x="12" y="138">TTS</text><rect x="290" y="124" width="210" height="22" rx="5" fill="#2FBF71"/><text class="barlbl" x="300" y="140">synth chunk 1→2→3</text>
+        <text class="lane" x="12" y="180">OUT</text><rect x="348" y="166" width="170" height="22" rx="5" fill="#334155"/><text class="barlbl" x="358" y="182">audio to caller</text>
+        <line x1="348" y1="28" x2="348" y2="190" stroke="#12C2E9" stroke-dasharray="4 4"/><text class="tick" x="354" y="36" fill="#0A7E99">agent speaks</text>
+      </svg>
+      <figcaption>Overlap, don't queue — that's the whole trick.</figcaption>
+    </figure>
+    <div class="say">
+      <p>"If I budget the half-second out — the biggest and most controllable chunk is actually <strong>endpointing</strong>: deciding the caller genuinely finished versus just pausing. That's around 150 milliseconds and I'd make it adaptive — predict end-of-turn from the words, not just from silence. Then finalizing the transcript is small, the language model's time-to-first-token is maybe 180 milliseconds, first chunk of audio out is around 90, and network is 30-ish. It adds up to roughly 500 — it's tight, which is exactly why the overlap matters."</p>
+    </div>
+    <div class="budget" aria-hidden="true">
+      <div class="seg" style="flex:0 0 30%;background:var(--amber)"><b>Endpointing</b><small>150ms</small></div>
+      <div class="seg" style="flex:0 0 9%;background:var(--cyan-deep)"><b>ASR</b><small>45ms</small></div>
+      <div class="seg" style="flex:0 0 37%;background:var(--violet)"><b>LLM TTFT</b><small>180ms</small></div>
+      <div class="seg" style="flex:0 0 18%;background:var(--green)"><b>TTS</b><small>90ms</small></div>
+      <div class="seg" style="flex:0 0 6%;background:#334155"><b>Net</b><small>35ms</small></div>
+    </div>
+    <div class="blabels"><span>0</span><span>~500 ms</span></div>
+    <div class="aside signal"><div class="h">The nuance that impresses</div><p>"And honestly, part of that 500 is silence the <em>caller</em> controls, so some teams measure from the moment we decide the turn ended. Also, if a bank API is slow, I can play a tiny natural filler — 'let me pull that up' — which buys real time and actually feels <em>more</em> human." Saying this shows product judgment, not just engineering.</p></div>
+  </section>
+
+  <!-- ARCH -->
+  <section id="arch">
+    <div class="beat-head"><span class="beat-no">BEAT 05</span><h2>Now I'll draw the architecture</h2><span class="clock">⏱ ~5 min</span></div>
+    <p class="goal">Goal: draw two planes. The split itself is the insight.</p>
+    <div class="say">
+      <p>"Now let me draw it. The single most important structural decision is that I split the system into <strong>two planes</strong>. On the left, a <strong>media plane</strong> — that's stateful, sticky, handles the live audio. On the right, an <strong>inference plane</strong> — that's the GPU-heavy machine learning, and it's load-balanced. These two scale differently and fail differently, so I keep them separate."</p>
+    </div>
+    <figure>
+      <svg viewBox="0 0 820 380" role="img" aria-label="Two-plane architecture">
+        <style>.t{font:600 12px 'Inter',sans-serif;fill:#15202E}.ts{font:10px 'JetBrains Mono',monospace;fill:#5B6775}.grp{font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;fill:#8A93A0}.ln{stroke:#B7C0CC;stroke-width:1.5;fill:none;marker-end:url(#a1)}.lc{stroke:#12C2E9;stroke-width:2;fill:none;marker-end:url(#a2)}</style>
+        <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#B7C0CC"/></marker><marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#12C2E9"/></marker></defs>
+        <rect x="16" y="160" width="96" height="54" rx="10" fill="#0B1220"/><text class="t" x="40" y="184" fill="#fff">Caller</text><text class="ts" x="28" y="200" fill="#7EE7F7">PSTN</text>
+        <rect x="140" y="40" width="230" height="300" rx="14" fill="#F0FBFD" stroke="#BEEBF3"/><text class="grp" x="156" y="60">MEDIA PLANE · stateful</text>
+        <rect x="158" y="72" width="194" height="46" rx="9" fill="#fff" stroke="#E3E7ED"/><text class="t" x="172" y="92">SBC / SIP trunks</text><text class="ts" x="172" y="107">multi-carrier · SRTP</text>
+        <rect x="158" y="128" width="194" height="46" rx="9" fill="#fff" stroke="#E3E7ED"/><text class="t" x="172" y="148">Media gateway</text><text class="ts" x="172" y="163">RTP · AEC · VAD · jitter</text>
+        <rect x="158" y="184" width="194" height="54" rx="9" fill="#0B1220"/><text class="t" x="172" y="205" fill="#fff">Session orchestrator</text><text class="ts" x="172" y="221" fill="#7EE7F7">per-call brain · barge-in</text>
+        <rect x="158" y="248" width="194" height="42" rx="9" fill="#fff" stroke="#E3E7ED"/><text class="t" x="172" y="268">Redis · session state</text>
+        <rect x="400" y="40" width="200" height="240" rx="14" fill="#F7F5FF" stroke="#DAD3FB"/><text class="grp" x="416" y="60">INFERENCE · GPU</text>
+        <rect x="416" y="72" width="168" height="42" rx="9" fill="#fff" stroke="#E3E7ED"/><text class="t" x="430" y="97">Streaming ASR + LID</text>
+        <rect x="416" y="122" width="168" height="42" rx="9" fill="#fff" stroke="#E3E7ED"/><text class="t" x="430" y="147">LLM + RAG + tools</text>
+        <rect x="416" y="172" width="168" height="42" rx="9" fill="#fff" stroke="#E3E7ED"/><text class="t" x="430" y="197">Streaming TTS</text>
+        <rect x="416" y="222" width="168" height="42" rx="9" fill="#fff" stroke="#E3E7ED"/><text class="t" x="430" y="247">Serving · batching</text>
+        <rect x="628" y="60" width="176" height="280" rx="14" fill="#FbFcfd" stroke="#E3E7ED"/><text class="grp" x="644" y="80">ENTERPRISE</text>
+        <rect x="644" y="92" width="144" height="40" rx="9" fill="#fff" stroke="#E3E7ED"/><text class="t" x="658" y="116">Core banking</text>
+        <rect x="644" y="140" width="144" height="40" rx="9" fill="#fff" stroke="#E3E7ED"/><text class="t" x="658" y="164">Auth / biometrics</text>
+        <rect x="644" y="188" width="144" height="40" rx="9" fill="#fff" stroke="#E3E7ED"/><text class="t" x="658" y="212">Fraud engine</text>
+        <rect x="644" y="236" width="144" height="40" rx="9" fill="#fff" stroke="#E3E7ED"/><text class="t" x="658" y="260">Human agents</text>
+        <rect x="644" y="284" width="144" height="40" rx="9" fill="#0B1220"/><text class="t" x="658" y="308" fill="#fff">Logging / audit</text>
+        <path class="lc" d="M112,186 L156,95"/><path class="lc" d="M112,188 L156,150"/>
+        <path class="lc" d="M352,206 C380,206 392,93 414,93"/><path class="lc" d="M352,210 C380,210 392,143 414,143"/><path class="lc" d="M352,214 C380,214 392,193 414,193"/>
+        <path class="ln" d="M352,222 C560,300 600,112 642,112"/><path class="ln" d="M352,226 C560,305 600,160 642,160"/><path class="ln" d="M352,230 C560,315 600,208 642,208"/><path class="ln" d="M352,236 C540,320 600,256 642,256"/><path class="ln" d="M352,244 C540,330 600,304 642,304"/>
+      </svg>
+      <figcaption>Cyan is the live audio hot path. Grey is control, backend, and async.</figcaption>
+    </figure>
+    <div class="say">
+      <p>"Quick tour: the call comes in through a <strong>session border controller</strong> and SIP trunks — and I'd use multiple carriers so one telco outage doesn't take everything down. The <strong>media gateway</strong> handles the raw audio: jitter buffering, echo cancellation, and voice-activity detection. Then the <strong>session orchestrator</strong> — that's the brain of one individual call. It fans the audio out to speech recognition, feeds the language model, streams the voice back, and it's the thing that handles barge-in. Session state lives in <strong>Redis</strong> so it's fast and replicated. On the right, the <strong>inference services</strong>, and behind everything the <strong>core banking system, auth, fraud, human agents, and audit logging</strong>."</p>
+    </div>
+    <div class="aside signal"><div class="h">Why the split matters — say it</div><p>"The reason I separate the planes: the media side is stateful and sticky to a call, so it scales on concurrent sessions. The inference side is basically stateless per request, so I can load-balance and batch it. Mixing them would mean I can't scale or fail them independently."</p></div>
+  </section>
+
+  <!-- TURN -->
+  <section id="turn">
+    <div class="beat-head"><span class="beat-no">BEAT 06</span><h2>Walk one turn through it</h2><span class="clock">⏱ ~3 min</span></div>
+    <p class="goal">Goal: prove the boxes actually connect by tracing one turn.</p>
+    <div class="say">
+      <p>"Let me trace a single turn end to end so you can see it work. Call lands, orchestrator spins up a session actor and loads state. Audio streams in as RTP — the gateway does echo cancellation and runs voice-activity-detection continuously, and forwards frames to speech recognition. That emits <strong>partial transcripts live</strong>, and language ID tags which language they're speaking.</p>
+      <p>The moment endpointing decides the caller finished, the transcript finalizes, and the language model resolves intent — pulling grounded facts through retrieval, and deciding whether to just answer or to <strong>call a banking tool</strong>, like get-balance. Tokens stream straight into text-to-speech, audio chunks stream straight back to the caller — and the agent is speaking inside the budget. And the whole time it's speaking, voice-detection is still listening, so if the caller jumps in, we catch it. Recordings and audit logs get written afterwards, <strong>never on the hot path</strong>."</p>
+    </div>
+  </section>
+
+  <!-- BARGE-IN -->
+  <section id="bargein">
+    <div class="beat-head"><span class="beat-no">BEAT 07</span><h2>Deep dive: barge-in</h2><span class="clock">⏱ ~4 min</span></div>
+    <p class="goal">Goal: pick this as deep dive #1. It's the trickiest and most impressive.</p>
+    <div class="say">
+      <p>"Let me go deep on barge-in, because it's what makes this feel human instead of like an IVR, and it's genuinely tricky. The problem is: while the agent is talking, <strong>its own voice is echoing back down the line</strong>. Naive voice-detection would hear the agent and think the caller is speaking.</p>
+      <p>So first, <strong>acoustic echo cancellation</strong> at the gateway — because we know exactly what audio we're playing out, we subtract it from what's coming in, and what's left is basically just the caller. Then voice-detection runs on that cleaned audio <strong>even while the agent is speaking</strong>. When the caller's speech crosses a threshold — sustained for maybe 200 milliseconds, so we ignore little 'mm-hmm' backchannels — the orchestrator fires a barge-in event. It <strong>immediately kills the text-to-speech, flushes the outgoing audio buffer, and cancels the in-flight generation</strong>, then switches to listening and re-plans."</p>
+    </div>
+    <div class="aside signal"><div class="h">Product judgment to add</div><p>"The subtle part is deciding what counts as an interruption. A short 'yeah, okay' is a backchannel — the agent should keep going. Tuning that threshold is what makes the conversation feel natural rather than twitchy." That distinction is what separates a senior answer.</p></div>
+    <div class="aside ifask"><div class="h">If they ask "what if echo cancellation isn't perfect?"</div><p>"Then some agent audio leaks into detection and I risk false barge-ins. I'd combine energy-based detection with a quick check that the residual doesn't correlate with what I'm currently playing, and bias toward requiring sustained speech before I stop — better to occasionally be a beat slow to stop than to cut myself off constantly."</p></div>
+  </section>
+
+  <!-- LANG -->
+  <section id="lang">
+    <div class="beat-head"><span class="beat-no">BEAT 08</span><h2>Deep dive: Indian languages</h2><span class="clock">⏱ ~4 min</span></div>
+    <p class="goal">Goal: deep dive #2. Region-specific — lean into code-switching.</p>
+    <div class="say">
+      <p>"Second deep dive — the multilingual requirement, which is genuinely hard for India specifically. It's not just twelve separate languages, it's constant <strong>code-mixing</strong> — someone will say 'mera balance kitna hai, transfer 5000 to savings' in one breath, mixing Hindi and English.</p>
+      <p>My strong preference is a <strong>single multilingual speech model</strong> — trained on telephony-band, accented, code-mixed Indian speech — rather than a bank of one-model-per-language. A unified model handles mid-sentence switching far better and it's way simpler to operate. I detect the language in the first few hundred milliseconds and per-utterance, since people switch. For understanding, I'd use a natively multilingual language model so I <strong>avoid translating to English and back</strong> — that pivot adds a whole extra hop of latency and loses nuance. And for the voice, per-language neural voices but with a <strong>consistent brand persona</strong>, so the bank sounds like one assistant no matter the language."</p>
+    </div>
+    <div class="aside board"><div class="h">The failure mode I'd volunteer</div><p>"The place this breaks most dangerously in banking is numbers — amounts and account IDs. So regardless of language, I <strong>read them back and confirm before executing</strong>: 'transferring five thousand rupees to your savings, shall I go ahead?' Accuracy on entities matters more than fluency." Volunteering the failure mode unprompted scores points.</p></div>
+  </section>
+
+  <!-- SAFETY -->
+  <section id="safety">
+    <div class="beat-head"><span class="beat-no">BEAT 09</span><h2>Dialog safety — money can't be a free LLM</h2><span class="clock">⏱ ~3 min</span></div>
+    <p class="goal">Goal: show I know a bank won't let a language model move money on vibes.</p>
+    <div class="say">
+      <p>"Now, a bank cannot let a free-form language model move money — so my answer is a <strong>hybrid</strong>. For open, informational stuff — FAQs, 'explain this charge,' navigation — the language model drives, grounded with retrieval so it isn't hallucinating. But for anything sensitive — authentication, transfers, blocking a card — the language model only <strong>routes into a fixed, deterministic, auditable flow</strong>. It doesn't freestyle the transaction.</p>
+      <p>Banking actions are exposed as <strong>typed tools</strong> — get-balance, block-card, transfer. The model proposes a call, but a <strong>policy layer validates it before it executes</strong>: is the caller authenticated to the right level, is it within limits, what's the fraud risk score. Anything that moves money requires an explicit spoken confirmation. And I'd treat the caller's speech as untrusted input — so it can never override system policy, which handles the prompt-injection angle."</p>
+    </div>
+  </section>
+
+  <!-- SCALE -->
+  <section id="scale">
+    <div class="beat-head"><span class="beat-no">BEAT 10</span><h2>Scaling the inference</h2><span class="clock">⏱ ~3 min</span></div>
+    <p class="goal">Goal: hit the GPU-efficiency levers concisely.</p>
+    <div class="say">
+      <p>"For scale — the two planes let me scale media and inference independently, which is the foundation. On the GPU side, the big lever is <strong>continuous batching</strong> for the language model — packing lots of concurrent short generations into each pass so the GPU stays busy without hurting per-request latency. I'd <strong>right-size the model</strong> too — a smaller fine-tuned model for the fast conversational path beats a giant general one on both latency and cost, and I reserve a bigger model for hard cases. Add quantization and an optimized serving runtime for throughput.</p>
+      <p>For the bursty banking peaks — salary day, month-end — I <strong>pre-warm capacity</strong>, because cold GPU spin-up is slow, and I autoscale on real signals like active sessions and queue depth. And critically, I use <strong>backpressure</strong>: if inference is saturated, I'd rather queue or hold a new call than accept one I can't serve inside the latency budget."</p>
+    </div>
+  </section>
+
+  <!-- HA -->
+  <section id="ha">
+    <div class="beat-head"><span class="beat-no">BEAT 11</span><h2>High availability</h2><span class="clock">⏱ ~2 min</span></div>
+    <p class="goal">Goal: be honest about the stateful-call problem, then show tiered fallback.</p>
+    <div class="say">
+      <p>"Availability is harder here than a normal web service, because a live call is stateful and can't just be retried. So: <strong>redundant carriers</strong>, multi-AZ and multi-region <strong>within India</strong> for localization, stateless services backed by replicated Redis so any orchestrator can be replaced. In-flight calls are the hard case — you can't seamlessly live-migrate a call — so I drain gracefully on deploys rather than pretending I can move an active call with zero blip.</p>
+      <p>The real strategy is <strong>tiered graceful degradation</strong>. If the language model is degraded, fall back to a constrained menu flow. If speech recognition struggles, offer keypad entry. Worst case, route to a human. The system should <strong>degrade in steps, not fail hard</strong> — and there's always a human as the final fallback."</p>
+    </div>
+    <div class="aside signal"><div class="h">Honesty scores here</div><p>Don't claim "zero dropped calls ever." Say: "I design so a failure drops at most a small set of calls and offers instant human fallback — that's the realistic goal." Interviewers trust candidates who name the limits.</p></div>
+  </section>
+
+  <!-- SEC -->
+  <section id="sec">
+    <div class="beat-head"><span class="beat-no">BEAT 12</span><h2>Security &amp; compliance</h2><span class="clock">⏱ ~2 min</span></div>
+    <p class="goal">Goal: treat it as a design driver, briefly but concretely.</p>
+    <div class="say">
+      <p>"Because it's an Indian bank, compliance shapes the design from the start. <strong>RBI data localization</strong> means customer and payment data stays in India — that constrains my regions and vendors up front. <strong>PCI</strong> for any card-data path, which I minimize and isolate. Encryption everywhere — SRTP for the media, TLS between services, encryption at rest for recordings. Authentication is <strong>layered</strong> — voice biometrics with liveness checks, plus OTP, plus knowledge-based, escalating with the risk of the transaction. I <strong>redact PII from logs and transcripts</strong>, keep tamper-evident audit trails for disputes and regulators, and run fraud and anomaly detection, because the phone channel is a favorite for social-engineering attacks."</p>
+    </div>
+  </section>
+
+  <!-- WRAP -->
+  <section id="wrap">
+    <div class="beat-head"><span class="beat-no">BEAT 13</span><h2>Wrap-up</h2><span class="clock">⏱ ~1 min</span></div>
+    <p class="goal">Goal: land the plane. Say this even if you're out of time.</p>
+    <div class="say">
+      <p>"So to sum it up — I treated this as a <strong>real-time streaming media system with an ML backend</strong>, split into a stateful media plane and a GPU inference plane. The 500-millisecond target is met by <strong>streaming and overlapping</strong> every stage, so the language model works on partial transcripts and speech starts on the first tokens. <strong>Barge-in</strong> comes from echo cancellation plus always-on voice detection that instantly stops the agent. <strong>Indian languages</strong> use one unified, telephony-tuned multilingual model that handles code-switching, with entity read-back for safety. Money moves only through <strong>deterministic, confirmed, auth-gated flows</strong>. Scale comes from plane separation and continuous batching, availability from redundant carriers and tiered graceful degradation with a human fallback, and it's <strong>RBI and PCI compliant with data localization</strong> from day one.</p>
+      <p>If I had more time, the next things I'd dig into are the endpointing model, the fraud-scoring loop, and the human-handoff experience."</p>
+    </div>
+    <div class="aside signal"><div class="h">Delivery reminder</div><p>Frame the crux in the first 5 minutes, do the math out loud, then commit to <strong>two</strong> deep dives and go deep — barge-in and multilingual are the two that fit this problem best. Breadth everywhere, depth in two places. That's a strong SD round.</p></div>
+  </section>
+
+  </main>
+</div>
+
+<div class="footer">Spoken interview script · voice AI for banking · rehearse aloud, time each beat, make it yours</div>
+
+<script>
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=map.get(e.target.id);if(a)a.classList.add('active');}});},{rootMargin:'-15% 0px -70% 0px',threshold:0});
+  document.querySelectorAll('section[id]').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>
