@@ -119,3 +119,248 @@ A few tradeoffs I'd call out. DDP over FSDP: correct here because the model fits
 
 If I took it further: FSDP so I can train models that don't fit on a single GPU, overlapping the gradient communication with computation to push MFU higher, and adding more thorough eval hooks during training instead of after."
 """
+
+
+
+"""
+=============================================================================
+SYSTEM DESIGN — Real-Time Voice AI Agent for a Bank
+Millions of calls/day · <500ms turn latency · barge-in · Indian languages · 99.99%
+=============================================================================
+
+00. HOW TO FRAME IT (say this first)
+------------------------------------
+This LOOKS like a chatbot but it isn't. It's a REAL-TIME STREAMING MEDIA
+system with an ML backend. The hard part isn't the AI being smart — it's
+turning a spoken turn around in <500ms, while people talk over it, in a dozen
+languages, without ever going down.
+
+Three constraints drive every decision:
+    (1) sub-500ms latency   (2) barge-in   (3) banking-grade reliability + compliance
+
+Clarify scope up front: inbound only, task-bounded self-service (balance,
+statement, card block, transfers) with human fallback, and we ASSEMBLE
+best-in-class speech/LLM services and own the orchestration.
+
+
+01. REQUIREMENTS
+----------------
+Functional : answer call, transcribe live, understand intent, reply in natural
+             voice, allow interruption, multilingual, authenticate, execute
+             banking actions, escalate to human, record + audit.
+
+Non-functional (where the real design lives):
+    Latency      <500ms P50, <800ms P95 (end-of-speech -> agent speaks)
+    Availability 99.99% (~52 min/yr) — a live call can't be retried later
+    Scale        ~5M calls/day -> ~35-40k concurrent at peak
+    Accuracy     low WER across accents/languages; near-ZERO wrong transactions
+    Compliance   RBI data localization + PCI — a DESIGN DRIVER, not a footnote
+
+Note: phone audio is narrowband 8kHz — harder for ASR than clean mic audio.
+Models must be tuned for telephony, accents, and code-mixing.
+
+
+02. CAPACITY MATH (concurrency is the number everything hangs off)
+------------------------------------------------------------------
+    avg concurrent = (5,000,000 calls x 180s) / 86,400s ~= 10,400
+    peak factor ~3.5x (mornings, salary day, month-end, festivals)
+    => design hot path for ~35-40k CONCURRENT sessions
+
+Key insight: not every call uses every resource every second.
+    ASR  -> runs continuously (whole call)
+    TTS  -> only while agent speaks (~40% of call)
+    LLM  -> only during a turn
+Size each GPU pool to its DUTY CYCLE, not to raw call volume. Keeps cost sane.
+
+
+03. THE 500ms CRUX (this beat wins the interview)
+-------------------------------------------------
+Naive design = sequential pipeline: transcribe fully -> LLM fully -> synth fully
+-> play. That's 1.5-2s. Budget blown 3x over.
+
+FIX: every stage STREAMS and stages OVERLAP in time.
+    - ASR emits partial transcripts continuously
+    - LLM starts composing on the PARTIAL, before caller even finishes
+    - TTS voices the first words before LLM finishes generating the rest
+    - You optimize TIME-TO-FIRST-AUDIO, not total processing time
+
+Rough budget (end-of-speech -> first agent audio):
+    Endpointing (VAD) .. ~150ms  <- biggest + most controllable; make it adaptive
+    ASR finalize ....... ~45ms
+    LLM time-to-1st-tok  ~180ms  <- warm models, KV-cache, small fast model
+    TTS 1st audio chunk  ~90ms   <- streaming vocoder, phrase by phrase
+    Network + jitter ... ~35ms
+                         ------
+                         ~500ms  (tight — which is WHY overlap matters)
+
+Nuance to impress: part of that 500ms is silence the CALLER controls. And if a
+bank API is slow, play a tiny filler ("let me pull that up") — buys time AND
+feels more human.
+
+
+04. ARCHITECTURE — split into TWO PLANES (the core structural decision)
+----------------------------------------------------------------------
+MEDIA PLANE (stateful, sticky, real-time audio — "the plumbing"):
+    SBC + SIP trunks ...... switchboard to phone network; multi-carrier for HA
+    Media gateway ......... RTP audio, jitter buffer, echo cancel (AEC), VAD
+    Session orchestrator .. the "brain" of ONE call: fans audio to ASR, feeds
+                            LLM, streams TTS back, handles barge-in
+    Redis ................. fast + replicated session state
+
+INFERENCE PLANE (GPU-heavy, load-balanced — "the thinking"):
+    Streaming ASR + language ID
+    LLM + RAG + tool-calling
+    Streaming TTS
+    Model serving (batching, autoscale)
+
+ENTERPRISE (behind everything):
+    Core banking (system of record) · Auth/biometrics · Fraud engine ·
+    Human agents · Logging/audit
+
+WHY split the planes: media is stateful + sticky to a call (scales on concurrent
+sessions); inference is stateless per request (load-balance + batch it). They
+scale and FAIL differently, so keep them separate.
+
+
+05. ONE TURN, END TO END
+------------------------
+Call lands -> orchestrator spins up session actor + loads state -> audio streams
+in (RTP) -> gateway does AEC + runs VAD continuously -> ASR emits partials +
+language ID tags language -> endpointing fires -> transcript finalizes -> LLM
+resolves intent, pulls grounded facts (RAG), decides answer-vs-tool-call ->
+tokens stream to TTS -> audio chunks stream back to caller (agent speaks inside
+budget) -> VAD keeps listening for barge-in -> recordings + audit written AFTER,
+never on the hot path.
+
+
+06. STREAMING PIPELINE (deep dive)
+----------------------------------
+Everything hot is a STREAM, not a request: audio in, growing partial transcripts,
+LLM token stream, TTS audio-chunk stream. Streaming is what unlocks overlap AND
+interruptibility.
+Watch-out: ASR partials are REVISABLE — don't fire a banking tool on unstable
+partials; commit tools only after finalization.
+
+
+07. BARGE-IN (deep dive #1 — trickiest, most impressive)
+--------------------------------------------------------
+Problem: while agent speaks, its OWN voice echoes back down the line; naive VAD
+thinks the caller is talking.
+
+    1. Acoustic Echo Cancellation (AEC) subtracts the known outgoing audio
+       -> what's left is basically just the caller
+    2. Full-duplex VAD runs on cleaned audio EVEN WHILE TTS plays
+    3. Caller speech sustained ~200ms (ignore "mm-hmm" backchannels)
+       -> fire barge-in event
+    4. Orchestrator INSTANTLY kills TTS, flushes outbound buffer, cancels
+       in-flight generation -> switch to listening -> re-plan
+
+Product judgment: not every interruption stops the agent. Short "yeah ok" is a
+backchannel. Tuning that threshold = natural vs twitchy.
+
+
+08. INDIAN LANGUAGES (deep dive #2 — region-specific)
+-----------------------------------------------------
+Not just 12 languages — constant CODE-MIXING ("mera balance kitna hai, transfer
+5000 to savings").
+
+    - Prefer ONE multilingual ASR model (telephony-tuned, code-mix trained) over
+      one-model-per-language — handles mid-sentence switching + simpler ops
+    - Detect language in first few hundred ms, per-utterance (people switch)
+    - Use a natively multilingual LLM -> AVOID translate-to-English pivot
+      (extra latency hop + lost nuance)
+    - TTS: per-language voices but ONE consistent brand persona
+
+Failure mode to volunteer: numbers/amounts/account-IDs break most dangerously.
+Always READ BACK + CONFIRM before executing. Accuracy on entities > fluency.
+
+
+09. DIALOG SAFETY — money can't be a free LLM
+---------------------------------------------
+HYBRID design:
+    Informational (FAQ, "explain this charge") -> LLM-driven, grounded via RAG
+    Sensitive (auth, transfers, card block)    -> LLM only ROUTES into a fixed,
+                                                  deterministic, auditable flow
+
+Banking actions = typed tools (getBalance, blockCard, transfer). LLM proposes;
+a POLICY LAYER validates BEFORE execution (auth level, limits, fraud score).
+Money movement always needs explicit spoken confirmation. Treat caller speech as
+UNTRUSTED input -> can't override policy (prompt-injection defense).
+
+
+10. SCALING INFERENCE
+---------------------
+    - Plane separation lets media + inference scale independently (foundation)
+    - Continuous batching for LLM -> pack many short generations per GPU pass
+    - Right-size the model: small fine-tuned model for the fast path, big model
+      reserved for hard cases
+    - Quantization (INT8/FP8) + optimized serving runtime
+    - Pre-warm capacity for known peaks (cold GPU spin-up is slow)
+    - Autoscale on active sessions + queue depth (not just CPU)
+    - Backpressure: if saturated, queue/hold new calls rather than accept ones
+      you can't serve inside the latency budget
+
+
+11. HIGH AVAILABILITY
+---------------------
+Harder than a web service — a live call is stateful, can't be retried.
+    - Redundant carriers + SIP trunks
+    - Multi-AZ, multi-region WITHIN India (localization)
+    - Stateless services + replicated Redis -> any orchestrator replaceable
+    - In-flight calls can't seamlessly live-migrate -> drain gracefully on deploy
+    - TIERED graceful degradation:
+        LLM degraded  -> constrained menu flow
+        ASR struggles -> keypad (DTMF) entry
+        worst case    -> route to human
+      Degrade in STEPS, don't fail hard.
+Honesty scores: don't claim "zero dropped calls ever" — say "a failure drops at
+most a small set of calls + offers instant human fallback."
+
+
+12. SECURITY & COMPLIANCE (design driver)
+-----------------------------------------
+    - RBI data localization -> customer/payment data stays in India (constrains
+      regions + vendors up front)
+    - PCI-DSS for any card-data path -> minimize, tokenize, isolate
+    - Encryption everywhere: SRTP (media), TLS (services), at-rest (recordings)
+    - Layered auth: voice biometrics (+ liveness/anti-spoof) + OTP + KBA,
+      escalating with transaction risk
+    - Redact PII from logs/transcripts; tamper-evident audit trails
+    - Fraud + anomaly detection (phone channel = favorite for social engineering)
+
+
+13. STATE & STORAGE
+-------------------
+    Live session context ... in-memory + Redis (sub-ms, replicated)
+    Customer/account data .. core banking = SYSTEM OF RECORD (never duplicated)
+    RAG knowledge base ..... vector DB + doc store
+    Call recordings ........ object storage, tiered (~7TB/day raw, cold after N days)
+    Transcripts + audit .... searchable store/warehouse (QA, disputes, analytics)
+
+Golden rule: system of record STAYS the core banking platform. Voice system
+holds only ephemeral session state + derived artifacts.
+
+
+14. OBSERVABILITY & METRICS
+---------------------------
+    Engineering : turn latency P50/P95/P99, time-to-first-token,
+                  time-to-first-audio, barge-in reaction time, dropped-call rate,
+                  GPU utilization + queue depth
+    Product     : ASR WER (per language/accent), CONTAINMENT RATE (resolved w/o
+                  human), escalation rate, task success, false barge-ins, CSAT,
+                  and critically TRANSACTION ERROR RATE
+    Plus distributed tracing across the audio pipeline + sampled recordings for QA.
+
+
+15. TL;DR (say this even if out of time)
+----------------------------------------
+Real-time streaming media system with an ML backend, split into a stateful media
+plane and a GPU inference plane. Hit 500ms by STREAMING + OVERLAPPING every stage.
+Barge-in = echo cancellation + always-on VAD that instantly stops the agent.
+Indian languages = one unified telephony-tuned multilingual model with entity
+read-back. Money moves only through deterministic, confirmed, auth-gated flows.
+Scale = plane separation + continuous batching + duty-cycle-aware GPU pools.
+Availability = redundant carriers + tiered graceful degradation + human fallback.
+RBI + PCI compliant with data localization from day one.
+=============================================================================
+"""
