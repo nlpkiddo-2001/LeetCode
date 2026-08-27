@@ -1060,7 +1060,7 @@ def maxSlidingWindow(nums: List[int], k: int):
             q.popleft()
 
         if (r + 1) >= k:
-            output.append(q[0])
+            output.append(nums[q[0]])
             l += 1
 
         r += 1
@@ -1790,7 +1790,7 @@ class MedianFinder:
             heapq.heappush(self.right, val)
 
         if len(self.left) > len(self.right) + 1:
-            val = heapq.heappop(self.left)
+            val = -heapq.heappop(self.left)
             heapq.heappush(self.right, val)
         elif len(self.right) > len(self.left):
             val = heapq.heappop(self.right)
@@ -1900,7 +1900,8 @@ def reverse_Words(s):
         l+=1
     return ''.join(result)
 
-
+s = "hello.world.python"
+expected_output = "python.world.hello"
 
 def sort012(arr):
     n = len(arr)
@@ -1963,12 +1964,12 @@ def heapify(arr, n, i):
 
     l = 2 * i + 1
 
-    r = 2 * i + 1
+    r = 2 * i + 2
 
-    if l < n and arr[l] < arr[largest]:
+    if l < n and arr[l] > arr[largest]:
         largest = l
 
-    if r < n and arr[r] < arr[largest]:
+    if r < n and arr[r] > arr[largest]:
         largest = r
 
     if largest != i:
@@ -2039,7 +2040,7 @@ class PrefixTree:
             if ch not in node.children:
                 return False
             node = node.children[ch]
-        return False
+        return True
 
 
 class WordDictionary:
@@ -3054,4 +3055,28 @@ class PriorityMap:
             heapq.heappop(self.heap)
 
         return None
+
+
+def minPathSum(grid):
+
+    m = len(grid)
+    n = len(grid[0])
+
+    dp = [[0] * n for _ in range(m)]
+
+    dp[0][0] = grid[0][0]
+
+    for j in range(1, n):
+        dp[0][j] = dp[0][j-1] + grid[0][j]
+
+    for i in range(1, m):
+        dp[i][0] = dp[i-1][0] + grid[i][0]
+
+    for i in range(n):
+        for j in range(m):
+            dp[i][j] = grid[i][j] + min(
+                dp[i-1][j], dp[i][j-1]
+            )
+
+    return dp[m-1][n-1]
 

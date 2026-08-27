@@ -93,10 +93,12 @@ If I had more machines, adding autoscaling and smarter handling of hot prefixes 
 
 """
 QUESTION 3:
-I built this as a from-scratch training framework to really understand distributed training internals and to have a clean, reproducible harness for the whole model lifecycle — pretraining, mid-training or continual pretraining, and fine-tuning — all driven by config instead of code changes. 
+I built this as a from-scratch training framework to really understand distributed training internals and to have a clean, 
+reproducible harness for the whole model lifecycle — pretraining, mid-training or continual pretraining, and fine-tuning — all driven by config instead of code changes. 
 A big goal was benchmarking: measuring throughput and how it scales as I change the model size.
 
-The mental model I worked from is that training throughput comes down to two things — can the model and its optimizer states fit in GPU memory, and can I keep the GPUs fed so they're never sitting idle. 
+The mental model I worked from is that training throughput comes down to two things — 
+can the model and its optimizer states fit in GPU memory, and can I keep the GPUs fed so they're never sitting idle. 
 Almost every design decision traces back to one of those.
 
 For the setup: I trained GPT-style models — the main one was around 1.2 billion parameters, dim 2048, 20 layers — on [N] H100 GPUs. 
@@ -105,17 +107,30 @@ I used plain PyTorch DDP. DDP puts a full copy of the model on each GPU, each GP
 Since the model fits, DDP is the right choice — simpler and less communication overhead than sharding. 
 If the model didn't fit on one GPU, that's when I'd move to FSDP.
 
+
 Here's how a run works. 
 Everything is defined in a YAML file — model size, batch size, learning rate, precision, optimizer, schedule. 
 I launch with torchrun, which spins up one process per GPU. 
 Each process loads its own shard of the data through a distributed data loader, so no two GPUs see the same batch. 
-Training runs in BF16 mixed precision — I use BF16 specifically over FP16 because BF16 has the same exponent range as full precision, so I don't need loss scaling and I don't hit the overflow problems FP16 has. I also turn on torch.compile and set the matmul precision to high, which lets the H100 use its faster tensor-core math — that's basically free throughput. To simulate a large batch without needing more memory, I use gradient accumulation: run several forward-backward passes, accumulate the gradients, then do one optimizer step. For the optimizer I support both AdamW and Muon, and for the learning rate I support cosine and Warmup-Stable-Decay — WSD is nice for continual training because the long stable phase means you can branch or resume without the learning rate having already decayed away.
+Training runs in BF16 mixed precision — I use BF16 specifically over FP16 because BF16 has the same exponent range as full precision, 
+so I don't need loss scaling and I don't hit the overflow problems FP16 has. 
+I also turn on torch.compile and set the matmul precision to high, which lets the H100 use its faster tensor-core math — that's basically free throughput. 
+To simulate a large batch without needing more memory, I use gradient accumulation: run several forward-backward passes, accumulate the gradients, then do one optimizer step. 
+For the optimizer I support both AdamW and Muon, and for the learning rate I support cosine and Warmup-Stable-Decay — 
+WSD is nice for continual training because the long stable phase means you can branch or resume without the learning rate having already decayed away.
 
-The part I'm happiest about engineering-wise is checkpointing and auto-resume. Long training runs crash — a node dies, something OOMs — and you can't afford to restart from zero. So I save [weights, optimizer state, scheduler state, and the step count] and the pipeline auto-detects the latest checkpoint and resumes exactly where it left off. I also rotate checkpoints, keeping only the last three, because these files are huge and disk fills up fast — that's a straight tradeoff between crash-safety and storage. And the multi-stage pipeline chains automatically: the pretrain stage writes a checkpoint, mid-training auto-detects it and continues, then fine-tuning picks up from there.
+The part I'm happiest about engineering-wise is checkpointing and auto-resume. Long training runs crash — a node dies, something OOMs — and you can't afford to restart from zero. 
+So I save [weights, optimizer state, scheduler state, and the step count] and the pipeline auto-detects the latest checkpoint and resumes exactly where it left off. 
+I also rotate checkpoints, keeping only the last three, because these files are huge and disk fills up fast — that's a straight tradeoff between crash-safety and storage. 
+And the multi-stage pipeline chains automatically: the pretrain stage writes a checkpoint, mid-training auto-detects it and continues, then fine-tuning picks up from there.
 
-For measuring, I tracked tokens per second and computed Model FLOPs Utilization — how much of the GPU's theoretical peak I was actually using — and got it to around 40%, which is a solid number for a setup like this. I benchmarked how throughput scaled as I changed model size, and I tracked downstream eval accuracy against reference baselines so I knew the framework was training correctly, not just fast.
+For measuring, I tracked tokens per second and computed Model FLOPs Utilization — how much of the GPU's theoretical peak I was actually using — and got it to around 40%, which is a solid number for a setup like this. 
+I benchmarked how throughput scaled as I changed model size, and I tracked downstream eval accuracy against reference baselines so I knew the framework was training correctly, not just fast.
 
-A few tradeoffs I'd call out. DDP over FSDP: correct here because the model fits, and it's simpler — but it doesn't scale to models bigger than one GPU, which is the first thing I'd change to go larger. BF16 over FP16: same range as FP32 so no loss-scaling headache, for a tiny precision cost. Gradient accumulation over a genuinely bigger batch: lets me get large-batch stability on limited memory, at the cost of more forward-backward passes per step. And keeping only three checkpoints: saves disk, but if I needed to analyze training history further back, I'd lose it.
+A few tradeoffs I'd call out. DDP over FSDP: correct here because the model fits, and it's simpler — but it doesn't scale to models bigger than one GPU, which is the first thing I'd change to go larger. 
+BF16 over FP16: same range as FP32 so no loss-scaling headache, for a tiny precision cost. 
+Gradient accumulation over a genuinely bigger batch: lets me get large-batch stability on limited memory, at the cost of more forward-backward passes per step. 
+And keeping only three checkpoints: saves disk, but if I needed to analyze training history further back, I'd lose it.
 
 If I took it further: FSDP so I can train models that don't fit on a single GPU, overlapping the gradient communication with computation to push MFU higher, and adding more thorough eval hooks during training instead of after."
 """
@@ -206,6 +221,7 @@ MEDIA PLANE (stateful, sticky, real-time audio — "the plumbing"):
     Session orchestrator .. the "brain" of ONE call: fans audio to ASR, feeds
                             LLM, streams TTS back, handles barge-in
     Redis ................. fast + replicated session state
+    
 
 INFERENCE PLANE (GPU-heavy, load-balanced — "the thinking"):
     Streaming ASR + language ID
