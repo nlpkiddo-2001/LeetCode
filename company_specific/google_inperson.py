@@ -31,6 +31,7 @@ WHAT THE L4 MLE LOOP ACTUALLY LOOKS LIKE (read this first)
     rounds, even with a positive Googleyness.
 ================================================================================
 """
+from matplotlib.colors import NoNorm
 
 
 # =============================================================================
@@ -114,7 +115,7 @@ def g2_meeting_scheduling(meetings):
 
 
 
-def g3_assign_questions_to_volunteers():
+def g3_assign_questions_to_volunteers(volunteers, questions):
     """
     G3. Assign Questions to Volunteers by Skill Tags
     Difficulty: Medium/Hard
@@ -125,7 +126,32 @@ def g3_assign_questions_to_volunteers():
       maximize matches (Hungarian / Hopcroft-Karp, or greedy if constraints allow).
     Follow-ups: Each volunteer max k questions; weighted by overlap size.
     """
-    # skipped this
+    assignment = {}
+
+    used_volunteers = set()
+
+    for question_id, question_tags in questions.items():
+
+        best_volunteer = None
+        best_overlap = 0
+
+        for volunteer_id, volunteer_tags in volunteers.items():
+
+            if volunteer_id in used_volunteers:
+                continue
+
+            set_intersection = len(question_tags & volunteer_tags)
+
+            if set_intersection > best_overlap:
+                best_overlap = set_intersection
+                best_volunteer = volunteer_id
+
+            if best_volunteer is not None:
+                assignment[volunteer_id] = volunteer_tags
+                used_volunteers.add(volunteer_id)
+
+    return assignment
+
 
 
 import heapq
