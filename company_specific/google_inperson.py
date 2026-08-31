@@ -185,7 +185,7 @@ def g4_min_cpus_earliest_completion(starts, L):
     return max_cpu
 
 
-def g5_n_cpus_m_tasks_min_time():
+def g5_n_cpus_m_tasks_min_time(tasks, n):
     """
     G5. N CPUs, M Tasks — Minimum Completion Time (load balancing)
     Difficulty: Medium/Hard   (Source: Google L4 AI/ML interview experience)
@@ -199,6 +199,37 @@ def g5_n_cpus_m_tasks_min_time():
       search on N instead of T).
     """
 
+    def feasible(tasks, n , limit):
+        loads = [0] * n
+
+        for task in sorted(tasks, reverse=True):
+            placed = False
+
+            for i in range(n):
+                if loads[i] + task < limit:
+                    placed=True
+                    loads[i] += task
+                    break
+            if not placed:
+                return False
+        return True
+
+    lo = max(max(tasks), (sum(tasks) + n - 1) // n)
+    hi = sum(tasks)
+
+    while lo < hi:
+
+        mid = (lo + hi) // 2
+
+        if feasible(tasks, n, mid):
+            hi = mid
+        else:
+            lo = mid + 1
+
+    return lo
+tasks = [5,4,3,2,1]
+N = 2
+print(g5_n_cpus_m_tasks_min_time(tasks, N))
 
 # =============================================================================
 # PART D — DESIGN / STREAMING / RATE-LIMITING  (your #2 lives here)
