@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Retrieval Notebook — Reranking, Generation, Evaluation</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']]
+  },
+  chtml: { scale: 1.05 }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<style>
+:root {
+  --paper: #F5F1E8;
+  --paper-2: #EFE9DA;
+  --paper-3: #E8E1CE;
+  --ink: #1C1917;
+  --ink-2: #3A3733;
+  --muted: #7A736A;
+  --rule: #D9D2C1;
+  --rule-strong: #B8AE97;
+  --accent: #2E5266;
+  --accent-2: #B8722E;
+  --accent-soft: rgba(46, 82, 102, 0.08);
+  --code-bg: #1C1917;
+  --code-ink: #E8E1CE;
+  --highlight-a: #B8722E;
+  --highlight-b: #6B8E4E;
+  --highlight-c: #8B4B6B;
+  --highlight-d: #2E5266;
+  --chunk-a: rgba(184, 114, 46, 0.22);
+  --chunk-b: rgba(107, 142, 78, 0.22);
+  --chunk-c: rgba(139, 75, 107, 0.22);
+  --chunk-d: rgba(46, 82, 102, 0.22);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 17px;
+  line-height: 1.7;
+  font-feature-settings: "kern", "liga", "onum";
+  -webkit-font-smoothing: antialiased;
+}
+
+.page { max-width: 780px; margin: 0 auto; padding: 4rem 2rem 8rem; }
+
+/* Hero */
+.hero { margin-bottom: 6rem; }
+
+.hero-eyebrow {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.hero-eyebrow::before {
+  content: "";
+  width: 32px;
+  height: 1px;
+  background: var(--rule-strong);
+}
+
+.hero-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+  font-variation-settings: "opsz" 144, "SOFT" 30;
+}
+.hero-title em {
+  font-style: italic;
+  color: var(--accent);
+  font-variation-settings: "opsz" 144, "SOFT" 100;
+}
+
+.hero-lede {
+  font-size: 1.15rem;
+  color: var(--ink-2);
+  max-width: 62ch;
+  margin-bottom: 3rem;
+}
+
+.volume-note {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+  display: inline-block;
+  margin-bottom: 2.5rem;
+  border-radius: 2px;
+}
+.volume-note strong { color: var(--ink); font-weight: 600; }
+
+/* --- Signature: chunking anatomy --- */
+.chunk-anatomy {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  padding: 2.25rem 2rem 1.75rem;
+  margin: 3rem -1rem;
+  border-radius: 2px;
+  position: relative;
+}
+.chunk-anatomy::before {
+  content: "The same passage, cut four ways";
+  position: absolute;
+  top: -0.6rem;
+  left: 1.75rem;
+  background: var(--paper);
+  padding: 0 0.75rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.chunk-example { margin: 1.25rem 0 1.75rem; }
+
+.chunk-example:last-child { margin-bottom: 0.5rem; }
+
+.chunk-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.chunk-label strong {
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.chunk-label .verdict {
+  font-family: "Source Serif 4", serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
+.chunk-passage {
+  font-family: "Source Serif 4", serif;
+  font-size: 0.94rem;
+  line-height: 1.75;
+  color: var(--ink-2);
+  padding: 0.4rem 0;
+}
+
+.chunk-passage .c-a { background: var(--chunk-a); padding: 0.05em 0.15em; border-radius: 1px; }
+.chunk-passage .c-b { background: var(--chunk-b); padding: 0.05em 0.15em; border-radius: 1px; }
+.chunk-passage .c-c { background: var(--chunk-c); padding: 0.05em 0.15em; border-radius: 1px; }
+.chunk-passage .c-d { background: var(--chunk-d); padding: 0.05em 0.15em; border-radius: 1px; }
+
+.chunk-passage .cut::before {
+  content: "|";
+  color: var(--accent-2);
+  font-weight: bold;
+  margin: 0 0.15em;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.parent-child-viz {
+  border: 1px solid var(--rule-strong);
+  padding: 0.85rem 1rem;
+  margin: 0.4rem 0;
+  background: rgba(46, 82, 102, 0.05);
+}
+.parent-child-viz .parent-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+.parent-child-viz .child {
+  border-left: 2px solid var(--accent-2);
+  padding-left: 0.6rem;
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+/* TOC */
+.toc {
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 2rem 0;
+  margin: 4rem 0 6rem;
+}
+.toc-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+.toc-list { list-style: none; display: grid; gap: 0.85rem; }
+.toc-item {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed var(--rule);
+}
+.toc-item:last-child { border-bottom: none; }
+.toc-num {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 8;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--accent);
+  font-size: 1.05rem;
+}
+.toc-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: 1.15rem;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.toc-title:hover { color: var(--accent-2); }
+.toc-note {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Chapter */
+.chapter { margin: 7rem 0 5rem; scroll-margin-top: 2rem; }
+.chapter-header { border-top: 3px solid var(--ink); padding-top: 2rem; margin-bottom: 3rem; }
+.chapter-num {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  margin-bottom: 1rem;
+}
+.chapter-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: clamp(2rem, 4.5vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  margin-bottom: 1.25rem;
+  font-variation-settings: "opsz" 144;
+}
+.chapter-title em { font-style: italic; color: var(--accent); }
+.chapter-summary { font-size: 1.05rem; color: var(--ink-2); max-width: 62ch; font-style: italic; }
+
+/* Section */
+.section { margin: 4rem 0; scroll-margin-top: 2rem; }
+h3.section-title {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: 1.6rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
+  color: var(--ink);
+  font-variation-settings: "opsz" 40;
+}
+.section-tag {
+  display: inline-block;
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.subsection { margin: 2.5rem 0; }
+h4.subsection-title {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--ink);
+  margin-bottom: 0.6rem;
+  font-variation-settings: "opsz" 20;
+}
+
+p { margin-bottom: 1.15rem; color: var(--ink-2); }
+p strong { color: var(--ink); font-weight: 600; }
+p em { font-style: italic; }
+a { color: var(--accent); text-underline-offset: 3px; }
+
+/* Boxes */
+.intuition {
+  border-left: 2px solid var(--accent-2);
+  padding: 0.4rem 0 0.4rem 1.25rem;
+  margin: 1.5rem 0;
+}
+.intuition-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  margin-bottom: 0.4rem;
+  display: block;
+}
+.intuition p { margin-bottom: 0; color: var(--ink-2); }
+
+.aside {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  padding: 1.25rem 1.5rem;
+  margin: 1.75rem 0;
+  font-size: 0.95rem;
+  border-radius: 2px;
+}
+.aside-label {
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.aside p:last-child { margin-bottom: 0; }
+
+/* Math */
+.math-display {
+  padding: 1.5rem 1rem;
+  margin: 1.5rem 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+  overflow-x: auto;
+  font-size: 1.05rem;
+  background: var(--paper-2);
+}
+.math-caption {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  margin-top: -0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.88em;
+  background: var(--paper-3);
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-ink);
+  padding: 1.25rem;
+  border-radius: 3px;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+pre code { background: transparent; padding: 0; color: inherit; font-size: inherit; }
+
+ul, ol { margin: 0.75rem 0 1.5rem 1.5rem; color: var(--ink-2); }
+li { margin-bottom: 0.5rem; }
+li::marker { color: var(--muted); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.93rem;
+}
+th, td {
+  text-align: left;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+th {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--rule-strong);
+}
+td { color: var(--ink-2); }
+td code { font-size: 0.82rem; }
+
+.big-idea {
+  font-family: "Fraunces", serif;
+  font-variation-settings: "opsz" 144, "SOFT" 100;
+  font-style: italic;
+  font-size: 1.35rem;
+  line-height: 1.4;
+  color: var(--accent);
+  margin: 2.5rem 0;
+  padding: 0 0 0 1.5rem;
+  border-left: 2px solid var(--accent-2);
+  max-width: 60ch;
+}
+
+.divider {
+  text-align: center;
+  margin: 4rem 0;
+  color: var(--rule-strong);
+  font-family: "Fraunces", serif;
+  letter-spacing: 1rem;
+  font-size: 0.9rem;
+}
+
+.closing {
+  margin-top: 7rem;
+  padding-top: 3rem;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+  color: var(--muted);
+  font-family: "Inter", sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+.closing em { font-family: "Fraunces", serif; font-style: italic; letter-spacing: 0; color: var(--ink-2); font-size: 0.95rem; }
+
+/* HNSW mini-diagram used in Ch5 */
+.hnsw-diagram {
+  padding: 1.5rem 0.5rem;
+  margin: 2rem 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-2);
+  overflow-x: auto;
+}
+.hnsw-diagram svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+/* --- Signature: retrieval funnel (Vol III hero) --- */
+.funnel {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  padding: 2.25rem 2rem 1.9rem;
+  margin: 3rem -1rem;
+  border-radius: 2px;
+  position: relative;
+}
+.funnel::before {
+  content: "From a billion candidates to one grounded answer";
+  position: absolute;
+  top: -0.6rem;
+  left: 1.75rem;
+  background: var(--paper);
+  padding: 0 0.75rem;
+  font-family: "Inter", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.funnel-stage {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.55rem 0;
+}
+.funnel-meta {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-align: right;
+  line-height: 1.3;
+}
+.funnel-meta strong { display: block; color: var(--ink); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.66rem; }
+.funnel-bar {
+  height: 2.1rem;
+  display: flex;
+  align-items: center;
+  padding: 0 0.9rem;
+  color: var(--code-ink);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  border-radius: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.fb-1 { width: 100%; background: var(--highlight-d); }
+.fb-2 { width: 62%; background: #3b6076; }
+.fb-3 { width: 34%; background: var(--highlight-b); color: var(--ink); }
+.fb-4 { width: 16%; background: var(--highlight-a); }
+.fb-5 { width: 7%;  background: var(--highlight-c); min-width: 4.5rem; }
+.funnel-note {
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 1.4rem;
+  letter-spacing: 0.02em;
+}
+
+/* --- encoder contrast diagram (Ch7) --- */
+.encoder-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+.encoder-card {
+  border: 1px solid var(--rule-strong);
+  background: var(--paper-2);
+  padding: 1.25rem 1.25rem 1.4rem;
+  border-radius: 2px;
+}
+.encoder-card h5 {
+  font-family: "Inter", sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.9rem;
+  font-weight: 600;
+}
+.encoder-card.cross h5 { color: var(--accent-2); }
+.encoder-card svg { display: block; width: 100%; height: auto; }
+.encoder-card p {
+  font-size: 0.85rem;
+  margin: 0.9rem 0 0;
+  color: var(--ink-2);
+}
+@media (max-width: 640px) { .encoder-grid { grid-template-columns: 1fr; } }
+
+/* --- lost-in-the-middle U curve (Ch8) --- */
+.curve-diagram {
+  padding: 1.5rem 0.5rem 1rem;
+  margin: 2rem 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-2);
+  overflow-x: auto;
+}
+.curve-diagram svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+/* --- eval triad (Ch9) --- */
+.triad {
+  padding: 1.75rem 0.5rem 1rem;
+  margin: 2rem 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-2);
+  overflow-x: auto;
+}
+.triad svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+@media (max-width: 640px) {
+  .page { padding: 3rem 1.25rem 5rem; }
+  .chunk-anatomy { margin: 2rem -0.5rem; padding: 1.75rem 1.25rem 1.25rem; }
+  .funnel { margin: 2rem -0.5rem; padding: 1.75rem 1.25rem 1.4rem; }
+  .funnel-stage { grid-template-columns: 6.5rem 1fr; gap: 0.6rem; }
+  .toc-item { grid-template-columns: 1.5rem 1fr; }
+  .toc-note { display: none; }
+  body { font-size: 16.5px; }
+}
+</style>
+<body>
+
+<main class="page">
+
+<!-- ======================================================= -->
+<!-- HERO                                                     -->
+<!-- ======================================================= -->
+
+<header class="hero">
+  <div class="hero-eyebrow">A study companion &middot; the final three chapters</div>
+
+  <h1 class="hero-title">The order you return them, the answer you write, the <em>proof that it worked</em>.</h1>
+
+  <div class="volume-note">
+    <strong>Volume III.</strong> Continues from the second notebook. The chapters on chunking, vector
+    databases, and query processing built the machinery that finds candidates. This volume is about what
+    happens after they are found.
+  </div>
+
+  <p class="hero-lede">
+    By now we can score documents, embed them, cut them into chunks, store billions of vectors, and reshape
+    a user&rsquo;s question. What we have <em>not</em> done is turn any of it into an answer &mdash; or checked
+    whether the answer is any good. Three concepts finish the pipeline: reranking (put the best candidate on
+    top), generation (write the grounded answer), and evaluation (prove the whole thing works). The last one
+    is the chapter everyone skips, and the one that separates a demo from a system.
+  </p>
+
+  <!-- Signature: retrieval funnel -->
+  <div class="funnel">
+
+    <p style="font-size: 0.93rem; color: var(--muted); font-style: italic; margin-bottom: 1.75rem;">
+      A production RAG pipeline is a funnel. Each stage is cheaper per item but sees more items than the next;
+      each hands a smaller, better set to the one after it. This volume covers the bottom half.
+    </p>
+
+    <div class="funnel-stage">
+      <div class="funnel-meta"><strong>Corpus</strong>~10⁹ vectors</div>
+      <div class="funnel-bar fb-1">everything you indexed</div>
+    </div>
+    <div class="funnel-stage">
+      <div class="funnel-meta"><strong>ANN retrieve</strong>~1000 · Vol II</div>
+      <div class="funnel-bar fb-2">cheap, high recall</div>
+    </div>
+    <div class="funnel-stage">
+      <div class="funnel-meta"><strong>Rerank</strong>~100 → 20 · Ch 7</div>
+      <div class="funnel-bar fb-3">expensive, precise</div>
+    </div>
+    <div class="funnel-stage">
+      <div class="funnel-meta"><strong>Assemble</strong>top ~5 · Ch 8</div>
+      <div class="funnel-bar fb-4">finalists</div>
+    </div>
+    <div class="funnel-stage">
+      <div class="funnel-meta"><strong>Generate</strong>1 answer · Ch 8</div>
+      <div class="funnel-bar fb-5">answer</div>
+    </div>
+
+    <p class="funnel-note">
+      And wrapped around the whole thing, invisible in the diagram: evaluation. It is the only reason you know
+      the narrowing is doing what you think it is. That is Chapter 9.
+    </p>
+  </div>
+
+  <p style="color: var(--muted); font-size: 0.95rem; font-style: italic; margin-top: 1.5rem;">
+    Retrieval gets you candidates. Reranking gets you the <em>right</em> candidates. Generation turns them into
+    an answer. Evaluation tells you whether any of that was true.
+  </p>
+</header>
+
+<!-- ======================================================= -->
+<!-- TOC                                                      -->
+<!-- ======================================================= -->
+
+<nav class="toc">
+  <div class="toc-label">Contents of this volume</div>
+  <ol class="toc-list">
+    <li class="toc-item">
+      <span class="toc-num">vii.</span>
+      <a href="#reranking" class="toc-title">Reranking</a>
+      <span class="toc-note">bi vs cross · ColBERT · LLM rerank · RRF · MMR · calibration</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">viii.</span>
+      <a href="#generation" class="toc-title">Generation</a>
+      <span class="toc-note">context assembly · lost-in-middle · grounding · compression · agentic</span>
+    </li>
+    <li class="toc-item">
+      <span class="toc-num">ix.</span>
+      <a href="#evaluation" class="toc-title">Evaluation</a>
+      <span class="toc-note">Recall · MRR · nDCG · RAG triad · LLM-as-judge · online</span>
+    </li>
+  </ol>
+</nav>
+
+
+<!-- ======================================================= -->
+<!-- CHAPTER 7 — RERANKING                                    -->
+<!-- ======================================================= -->
+
+<section class="chapter" id="reranking">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter Seven</div>
+    <h2 class="chapter-title">Reranking: <em>the second look</em>.</h2>
+    <p class="chapter-summary">
+      The first-stage retriever is built for speed and recall &mdash; it casts a wide net and lets some junk
+      through on purpose. The reranker is the second pass: slower, sharper, and applied only to the shortlist.
+      Getting the ordering right at the top is often the single highest-leverage change in the whole pipeline.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 7.0 Setup ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 7.0 &nbsp;·&nbsp; why two stages exist at all</span>
+    <h3 class="section-title">Recall first, precision second</h3>
+
+    <p>
+      There is a tension no single retriever resolves well. To search a billion vectors in milliseconds you
+      need an index that is fast &mdash; and fast means approximate, which means the scoring is coarse. A
+      coarse scorer is good at <em>not missing</em> the right document (recall) but bad at putting it in
+      exactly the right spot (precision at the very top).
+    </p>
+
+    <p>
+      So production systems split the job. The first stage &mdash; ANN over embeddings, or BM25, or both
+      &mdash; is tuned for <strong>recall</strong>: get the relevant documents <em>somewhere</em> in the top
+      few hundred. The second stage &mdash; the reranker &mdash; is tuned for <strong>precision</strong>: take
+      that shortlist and reorder it so the best few rise to the top.
+    </p>
+
+    <p>
+      The economics are what make this work. The first stage is cheap per item, so it can afford to look at
+      everything. The reranker is expensive per item, so it can only afford to look at the shortlist &mdash;
+      but the shortlist is small (100, not a billion), so the total cost stays bounded. You pay for accuracy
+      exactly where it matters and nowhere else.
+    </p>
+
+    <div class="intuition">
+      <span class="intuition-label">The number that moves</span>
+      <p>
+        A first-stage retriever might put the right answer at rank 30. That is a recall success &mdash; it is
+        in the top 100 &mdash; but a precision failure, because you only send the top 5 to the model. The
+        reranker&rsquo;s entire job is to move that rank-30 document to rank 1. When people say &ldquo;adding a
+        reranker fixed our RAG,&rdquo; this is almost always the mechanism.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 7.1 Bi vs cross ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 7.1 &nbsp;·&nbsp; the architectural fork</span>
+    <h3 class="section-title">Bi-encoders and cross-encoders</h3>
+
+    <p>
+      To understand reranking you have to understand why the first stage cannot just be accurate to begin
+      with. It comes down to <em>when</em> the query and the document meet.
+    </p>
+
+    <p>
+      A <strong>bi-encoder</strong> embeds the query and the document <em>separately</em>, into the same
+      space, and compares them with a cheap operation (dot product or cosine). Because the document embeddings
+      do not depend on the query, you can compute them once at ingestion time and store them. At query time
+      you only embed the query and do a fast similarity search. This is the whole reason vector databases are
+      possible &mdash; and the reason they are approximate. The query and document never actually interact;
+      they only meet as two finished vectors.
+    </p>
+
+    <p>
+      A <strong>cross-encoder</strong> does the opposite. It concatenates the query and the document into a
+      single input &mdash; <code>[query] [SEP] [document]</code> &mdash; and runs them through the model
+      <em>together</em>, so every query token can attend to every document token. The output is a single
+      relevance score. This is dramatically more accurate, because the model can reason about how the specific
+      query relates to the specific document. But nothing can be precomputed: the score depends on the pair, so
+      you need one full forward pass <em>per document</em>.
+    </p>
+
+    <div class="encoder-grid">
+      <div class="encoder-card">
+        <h5>Bi-encoder — retrieve</h5>
+        <svg viewBox="0 0 240 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bi-encoder diagram">
+          <style>
+            .box { fill: #EFE9DA; stroke: #B8AE97; stroke-width: 1; }
+            .enc { fill: #2E5266; }
+            .lbl { font-family: "Inter", sans-serif; font-size: 9px; fill: #3A3733; }
+            .lblw { font-family: "Inter", sans-serif; font-size: 9px; fill: #E8E1CE; }
+            .op { font-family: "JetBrains Mono", monospace; font-size: 10px; fill: #B8722E; }
+          </style>
+          <rect x="10" y="12" width="70" height="20" class="box"/>
+          <text x="45" y="26" class="lbl" text-anchor="middle">query</text>
+          <rect x="160" y="12" width="70" height="20" class="box"/>
+          <text x="195" y="26" class="lbl" text-anchor="middle">document</text>
+          <rect x="10" y="52" width="70" height="24" class="enc"/>
+          <text x="45" y="68" class="lblw" text-anchor="middle">encoder</text>
+          <rect x="160" y="52" width="70" height="24" class="enc"/>
+          <text x="195" y="68" class="lblw" text-anchor="middle">encoder</text>
+          <line x1="45" y1="32" x2="45" y2="52" stroke="#B8AE97"/>
+          <line x1="195" y1="32" x2="195" y2="52" stroke="#B8AE97"/>
+          <line x1="45" y1="76" x2="45" y2="100" stroke="#B8AE97"/>
+          <line x1="195" y1="76" x2="195" y2="100" stroke="#B8AE97"/>
+          <circle cx="45" cy="108" r="6" fill="#2E5266"/>
+          <circle cx="195" cy="108" r="6" fill="#2E5266"/>
+          <text x="120" y="112" class="op" text-anchor="middle">· cos ·</text>
+          <text x="120" y="138" class="lbl" text-anchor="middle">docs embedded once, ahead of time</text>
+        </svg>
+        <p>Two separate passes, no interaction. Precompute every document. Fast enough for a billion.</p>
+      </div>
+      <div class="encoder-card cross">
+        <h5>Cross-encoder — rerank</h5>
+        <svg viewBox="0 0 240 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cross-encoder diagram">
+          <style>
+            .box2 { fill: #EFE9DA; stroke: #B8AE97; stroke-width: 1; }
+            .enc2 { fill: #B8722E; }
+            .lbl2 { font-family: "Inter", sans-serif; font-size: 9px; fill: #3A3733; }
+            .lblw2 { font-family: "Inter", sans-serif; font-size: 9px; fill: #E8E1CE; }
+            .op2 { font-family: "JetBrains Mono", monospace; font-size: 10px; fill: #B8722E; }
+          </style>
+          <rect x="20" y="12" width="90" height="20" class="box2"/>
+          <text x="65" y="26" class="lbl2" text-anchor="middle">query</text>
+          <rect x="130" y="12" width="90" height="20" class="box2"/>
+          <text x="175" y="26" class="lbl2" text-anchor="middle">document</text>
+          <rect x="20" y="52" width="200" height="24" class="enc2"/>
+          <text x="120" y="68" class="lblw2" text-anchor="middle">joint encoder (full attention)</text>
+          <line x1="65" y1="32" x2="100" y2="52" stroke="#B8AE97"/>
+          <line x1="175" y1="32" x2="140" y2="52" stroke="#B8AE97"/>
+          <line x1="120" y1="76" x2="120" y2="100" stroke="#B8AE97"/>
+          <rect x="88" y="100" width="64" height="18" fill="#8B4B6B"/>
+          <text x="120" y="113" class="lblw2" text-anchor="middle">score</text>
+          <text x="120" y="138" class="lbl2" text-anchor="middle">one pass per (query, doc) pair</text>
+        </svg>
+        <p>One joint pass, full interaction. Nothing precomputed &mdash; so only ever run on a shortlist.</p>
+      </div>
+    </div>
+
+    <p>
+      That is the entire trade in one picture. The bi-encoder is the retriever from Volume II. The
+      cross-encoder is the reranker. You use the first to get from a billion to a hundred, and the second to
+      get from a hundred to five. Neither replaces the other; the pipeline needs both.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 7.2 Cross-encoder reranker ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 7.2 &nbsp;·&nbsp; the workhorse reranker</span>
+    <h3 class="section-title">Cross-encoder reranking in practice</h3>
+
+    <p>
+      A cross-encoder reranker takes the top-\(K\) candidates from the first stage, forms \(K\) query-document
+      pairs, scores each one, and sorts by score. The families you will meet by name are the MS MARCO-trained
+      MiniLM cross-encoders (small, fast, a strong default), the multilingual <strong>bge-reranker</strong>
+      models, and hosted APIs like <strong>Cohere Rerank</strong> and <strong>Jina Reranker</strong>. They all
+      share the same shape: pair in, relevance score out.
+    </p>
+
+    <p>
+      The one number you have to pick is \(K\), the shortlist size. It is a direct latency-versus-quality dial:
+    </p>
+
+    <div class="math-display">\[ \text{rerank latency} \approx K \times (\text{cost of one cross-encoder pass}) \]</div>
+
+    <p>
+      Rerank 100 candidates and you get almost all the quality a reranker can offer, at 100 forward passes of
+      latency. Rerank 1000 and you buy a little more recall for ten times the cost. Rerank 10 and you have
+      barely given the reranker anything to reorder. In most systems \(K\) between 50 and 200 is the sweet
+      spot; batch the pairs so the passes run in parallel on the accelerator rather than one at a time.
+    </p>
+
+    <div class="aside">
+      <div class="aside-label">The reranker cannot fix what retrieval missed</div>
+      <p>
+        A reranker only reorders the shortlist it is handed. If the right document sits at rank 4000 because
+        the first stage never surfaced it, no reranker will find it &mdash; it is not in the candidate set.
+        This is why the first stage is tuned for recall, not precision: its only job is to make sure the answer
+        is <em>somewhere</em> in the top-\(K\). Reranking is worthless if retrieval recall is bad. Fix recall
+        first.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 7.3 ColBERT / late interaction ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 7.3 &nbsp;·&nbsp; the middle ground</span>
+    <h3 class="section-title">Late interaction (ColBERT-style)</h3>
+
+    <p>
+      Bi-encoders are fast but blunt; cross-encoders are sharp but slow. Late interaction sits between them,
+      and if you read the embeddings chapter in Volume I, ColBERT already came up &mdash; here is where it
+      earns its place in the pipeline.
+    </p>
+
+    <p>
+      Instead of collapsing a document into a single vector, a late-interaction model keeps <em>one vector per
+      token</em>. At query time it also keeps one vector per query token. The relevance score is computed with
+      <strong>MaxSim</strong>: for each query token, find its best-matching document token, then sum those
+      best matches.
+    </p>
+
+    <div class="math-display">\[ \text{score}(q, d) = \sum_{i \in q} \max_{j \in d} \; \big( E_{q_i} \cdot E_{d_j} \big) \]</div>
+    <div class="math-caption">Each query token picks its most similar document token; the matches are summed</div>
+
+    <p>
+      This captures token-level interaction &mdash; the word &ldquo;jaguar&rdquo; in the query can lock onto
+      &ldquo;jaguar&rdquo; in the document even if the rest of the sentence differs &mdash; without a full
+      joint forward pass. Because document token vectors can be precomputed and stored, ColBERT can even serve
+      as a first-stage retriever, not just a reranker. The cost is storage: one vector per token is far more
+      than one vector per chunk, which is why late interaction lives or dies on aggressive vector
+      compression.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 7.4 LLM rerankers ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 7.4 &nbsp;·&nbsp; asking the model to judge</span>
+    <h3 class="section-title">LLM-based reranking</h3>
+
+    <p>
+      The most flexible reranker is a general-purpose LLM prompted to judge relevance. There are three shapes,
+      trading cost against quality.
+    </p>
+
+    <h4 class="subsection-title">Pointwise</h4>
+    <p>
+      Show the model one query and one document, ask for a relevance score (say 0&ndash;10 or a yes/no). Simple
+      and parallelisable, but the model scores each document in isolation, with no sense of the others &mdash;
+      so the scores are noisy and hard to compare across documents.
+    </p>
+
+    <h4 class="subsection-title">Pairwise</h4>
+    <p>
+      Show the model two documents and ask which is more relevant. This is what humans are actually good at,
+      and the judgments are reliable &mdash; but ranking \(K\) documents by comparisons is expensive, closer to
+      a sort than a single pass.
+    </p>
+
+    <h4 class="subsection-title">Listwise</h4>
+    <p>
+      Show the model the query and a numbered list of documents at once, and ask it to return the list
+      reordered by relevance. This is the idea behind <strong>RankGPT</strong>. It is efficient and the model
+      sees all candidates together, so it can make relative judgments &mdash; but long lists overflow the
+      context window, so listwise reranking usually runs in overlapping windows that are then stitched together.
+    </p>
+
+    <div class="intuition">
+      <span class="intuition-label">When it is worth it</span>
+      <p>
+        LLM rerankers are slower and pricier than a dedicated cross-encoder, and for pure relevance a good
+        cross-encoder often matches them. Reach for an LLM reranker when relevance depends on
+        <em>reasoning</em> the cross-encoder cannot do &mdash; multi-hop logic, instructions in the query
+        (&ldquo;prefer official sources,&rdquo; &ldquo;most recent first&rdquo;), or nuanced domain judgment.
+        Otherwise the cross-encoder is the better default.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 7.5 RRF ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 7.5 &nbsp;·&nbsp; merging ranked lists</span>
+    <h3 class="section-title">Reciprocal Rank Fusion</h3>
+
+    <p>
+      Hybrid search &mdash; dense retrieval plus BM25 &mdash; gives you two ranked lists of the same documents,
+      with scores on completely different scales. A cosine similarity of 0.82 and a BM25 score of 14.3 cannot
+      be added directly; one would swamp the other. You need a way to combine <em>rankings</em> without
+      trusting the raw scores.
+    </p>
+
+    <p>
+      <strong>Reciprocal Rank Fusion</strong> does exactly this, and it is beautifully simple. For each
+      document, ignore the scores entirely and use only its rank in each list:
+    </p>
+
+    <div class="math-display">\[ \text{RRF}(d) = \sum_{i \in \text{lists}} \frac{1}{k + \text{rank}_i(d)} \]</div>
+    <div class="math-caption">k is a small constant, conventionally 60; rank starts at 1</div>
+
+    <p>
+      A document ranked first in a list contributes \(1/(k+1)\); ranked tenth, \(1/(k+10)\). Sum a
+      document&rsquo;s contributions across all the lists it appears in, and sort by that sum. Documents that
+      rank highly in <em>either</em> retriever float up; documents that rank highly in <em>both</em> float up
+      hardest. The constant \(k\) softens the influence of the very top ranks so a single list cannot dominate.
+    </p>
+
+    <p>
+      RRF needs no score normalisation, no tuning, and no training. It works for two lists or ten, dense and
+      sparse, or several rerankers combined. It is the default fusion method in most hybrid systems for a
+      reason: it is almost impossible to make it perform badly.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 7.6 MMR ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 7.6 &nbsp;·&nbsp; relevance is not enough</span>
+    <h3 class="section-title">Maximal Marginal Relevance</h3>
+
+    <p>
+      Rank purely by relevance and you hit a subtle failure: the top five results are often five
+      near-duplicates of the same passage. Each is individually relevant, but together they tell the model one
+      thing five times, wasting the context budget and starving it of the <em>other</em> facts the answer
+      needs.
+    </p>
+
+    <p>
+      <strong>Maximal Marginal Relevance</strong> fixes this by rewarding a candidate for being relevant to the
+      query <em>and</em> different from what has already been selected. You build the result set greedily, at
+      each step picking the document that maximises:
+    </p>
+
+    <div class="math-display">\[ \text{MMR} = \arg\max_{d \in R \setminus S} \Big[\, \lambda \cdot \text{sim}(d, q) \;-\; (1-\lambda)\,\max_{s \in S}\, \text{sim}(d, s) \,\Big] \]</div>
+    <div class="math-caption">R is the candidate pool, S the already-chosen set, λ balances relevance against diversity</div>
+
+    <p>
+      The first term is relevance to the query; the second penalises similarity to documents already picked.
+      With \(\lambda = 1\) you get pure relevance (and the duplicates come back); with \(\lambda = 0\) you get
+      pure diversity (and lose the plot). Values around 0.5&ndash;0.7 usually give a result set that is both
+      on-topic and non-redundant. MMR matters most for broad or exploratory queries where the answer draws on
+      several distinct facts.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 7.7 Calibration & thresholding ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 7.7 &nbsp;·&nbsp; turning scores into decisions</span>
+    <h3 class="section-title">Calibration and the &ldquo;nothing relevant&rdquo; case</h3>
+
+    <p>
+      Reranker scores are not probabilities. A cross-encoder might output 8.2 for a great match and &minus;3.1
+      for a poor one, but those numbers have no absolute meaning &mdash; they are only useful for
+      <em>ordering</em>. This becomes a problem the moment you want to make a decision, not just a ranking.
+    </p>
+
+    <p>
+      The most important decision is the <strong>relevance floor</strong>: what if none of the candidates are
+      actually any good? Every retriever returns a top-\(k\) even for a query the corpus cannot answer. If you
+      pass those irrelevant chunks to the model anyway, you have handed it the raw materials for a confident,
+      wrong, well-cited answer. Far better to detect &ldquo;nothing here is relevant&rdquo; and let the model
+      say so.
+    </p>
+
+    <p>
+      To do that you need calibrated scores. The usual route is to fit a logistic (sigmoid) mapping from raw
+      reranker scores to a 0&ndash;1 relevance probability on a labelled set, then set a threshold: below it,
+      treat the result as no-answer. This is unglamorous and easy to skip, and skipping it is a leading cause
+      of hallucinated answers to unanswerable questions.
+    </p>
+
+    <p class="big-idea">
+      A reranker changes the order; calibration changes what you do with the order. The first improves good
+      answers. The second prevents bad ones.
+    </p>
+  </div>
+</section>
+
+
+<div class="divider">· · ·</div>
+<!-- ======================================================= -->
+<!-- CHAPTER 8 — GENERATION                                   -->
+<!-- ======================================================= -->
+
+<section class="chapter" id="generation">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter Eight</div>
+    <h2 class="chapter-title">Generation: <em>where it all gets spent</em>.</h2>
+    <p class="chapter-summary">
+      Every stage so far exists to produce one thing: a small set of relevant passages. Generation is where
+      that set becomes an answer &mdash; or fails to. Perfect retrieval feeding a careless prompt still
+      produces a bad system. This is the least glamorous chapter and the one where the most quality is quietly
+      lost.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 8.0 Setup ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 8.0 &nbsp;·&nbsp; the last mile</span>
+    <h3 class="section-title">The generator can only be as good as its context</h3>
+
+    <p>
+      It is tempting to think the model does the hard part &mdash; you retrieve some text, hand it over, and
+      the LLM figures it out. In reality the generation step is where a surprising amount of engineering lives.
+      The model does not see your corpus, your reranker scores, or your intentions. It sees exactly one thing:
+      the prompt you assembled. Everything about that prompt &mdash; what you put in it, in what order, with
+      what instructions &mdash; determines the answer.
+    </p>
+
+    <p>
+      Two systems with identical retrieval can produce completely different answers because one assembled the
+      context thoughtfully and the other dumped ten chunks into a template. This chapter is about that
+      assembly, and about the failure modes &mdash; hallucination, distraction, refusal &mdash; that live
+      here.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 8.1 Context assembly ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 8.1 &nbsp;·&nbsp; building the prompt</span>
+    <h3 class="section-title">Context assembly</h3>
+
+    <p>
+      Assembly is the step that turns a ranked list of chunks into the text block the model reads. The moving
+      parts are: how many chunks to include, in what order, how to separate them, and what instructions to wrap
+      around them.
+    </p>
+
+    <p>
+      <strong>How many.</strong> More context is not better. Beyond a handful of chunks you start adding
+      marginally-relevant material that dilutes the signal and invites the model to wander. Most systems land
+      between three and eight chunks; the right number is an empirical choice, not a default.
+    </p>
+
+    <p>
+      <strong>Separation and attribution.</strong> Give each chunk a clear delimiter and a stable source label
+      &mdash; a document title, an ID, a URL. This does double duty: it helps the model keep sources distinct,
+      and it is what makes grounded citation possible later. A common shape is to number the sources and prefix
+      each chunk with its number so the model can cite <code>[3]</code> directly.
+    </p>
+
+    <p>
+      <strong>Instructions.</strong> The wrapper text matters as much as the chunks. It tells the model to
+      answer from the provided context, to cite its sources, and &mdash; critically &mdash; what to do when the
+      context does not contain the answer. We return to that in &sect;&nbsp;8.5.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 8.2 Lost in the middle ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 8.2 &nbsp;·&nbsp; position is not neutral</span>
+    <h3 class="section-title">Lost in the middle</h3>
+
+    <p>
+      Here is a result that surprises people the first time they meet it. When you place relevant information
+      inside a long context, the model uses it <em>far better if it sits near the beginning or the end</em>
+      than if it sits in the middle. Accuracy as a function of the answer&rsquo;s position traces a U: strong at
+      the edges, sagging in the centre.
+    </p>
+
+    <div class="curve-diagram">
+      <svg viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lost in the middle U-shaped accuracy curve">
+        <style>
+          .axis { stroke: #B8AE97; stroke-width: 1; }
+          .axlbl { font-family: "Inter", sans-serif; font-size: 11px; fill: #7A736A; }
+          .ucurve { fill: none; stroke: #B8722E; stroke-width: 2.5; }
+          .note { font-family: "Source Serif 4", serif; font-size: 11px; fill: #3A3733; font-style: italic; }
+          .tick { font-family: "Inter", sans-serif; font-size: 9px; fill: #7A736A; }
+        </style>
+        <!-- axes -->
+        <line x1="70" y1="30" x2="70" y2="175" class="axis"/>
+        <line x1="70" y1="175" x2="520" y2="175" class="axis"/>
+        <text x="20" y="45" class="axlbl">acc.</text>
+        <text x="240" y="205" class="axlbl">position of the relevant chunk in context</text>
+        <text x="66" y="45" class="tick" text-anchor="end">high</text>
+        <text x="66" y="172" class="tick" text-anchor="end">low</text>
+        <text x="70" y="192" class="tick" text-anchor="middle">start</text>
+        <text x="295" y="192" class="tick" text-anchor="middle">middle</text>
+        <text x="520" y="192" class="tick" text-anchor="middle">end</text>
+        <!-- U curve -->
+        <path d="M 80 48 C 150 70, 200 150, 295 152 C 390 150, 440 78, 510 52" class="ucurve"/>
+        <circle cx="80" cy="48" r="4" fill="#2E5266"/>
+        <circle cx="295" cy="152" r="4" fill="#8B4B6B"/>
+        <circle cx="510" cy="52" r="4" fill="#2E5266"/>
+        <text x="150" y="95" class="note">best at the edges</text>
+        <text x="235" y="140" class="note">worst buried in the middle</text>
+      </svg>
+    </div>
+
+    <p>
+      The practical consequence is a specific ordering rule. Do not put your best chunk in the middle of a
+      long context. Put the most relevant material <strong>first and last</strong>, and let the weaker
+      candidates fill the centre &mdash; the position where they will do the least harm. Some systems go
+      further and reorder reranked chunks into an explicit &ldquo;strongest at the ends&rdquo; arrangement
+      before assembly.
+    </p>
+
+    <p>
+      This is also an argument against overstuffing. A shorter context has no bad middle to get lost in. If you
+      only include the four chunks that matter, position stops being a problem at all.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 8.3 Budgeting ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 8.3 &nbsp;·&nbsp; the token account</span>
+    <h3 class="section-title">Context-window budgeting</h3>
+
+    <p>
+      The context window is a fixed account, and everything competes for it: the system instructions, the
+      conversation history, the retrieved chunks, and the space the model needs to actually write the answer.
+      Spend it all on retrieved context and the model has no room to respond; spend too little and you starve
+      it of evidence.
+    </p>
+
+    <p>
+      A useful way to think about it as a simple subtraction:
+    </p>
+
+    <div class="math-display">\[ \text{budget}_{\text{context}} = W - \text{tokens}_{\text{system}} - \text{tokens}_{\text{history}} - \text{tokens}_{\text{answer}} \]</div>
+    <div class="math-caption">W is the model&rsquo;s window; reserve the answer allowance before you fill the rest</div>
+
+    <p>
+      Reserve the answer allowance <em>first</em> &mdash; decide how long an answer you need and protect that
+      space &mdash; then fill the remainder with reranked chunks in priority order until the budget runs out.
+      When a chunk does not fit, drop it rather than truncating it mid-sentence; a half-chunk is often worse
+      than no chunk. Large windows do not make budgeting obsolete, because &ldquo;lost in the middle&rdquo;
+      means a filled 200k window frequently answers <em>worse</em> than a curated 8k one.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 8.4 Compression ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 8.4 &nbsp;·&nbsp; more signal per token</span>
+    <h3 class="section-title">Context compression</h3>
+
+    <p>
+      Retrieved chunks are rarely all signal. A chunk that matched on one sentence might carry four more that
+      are irrelevant to this query. Compression is the step that strips a chunk down to the part that actually
+      earns its place in the budget.
+    </p>
+
+    <h4 class="subsection-title">Extractive compression</h4>
+    <p>
+      Score the individual sentences within each retrieved chunk against the query &mdash; the same
+      cross-encoder from Chapter 7 works well &mdash; and keep only the sentences that clear a threshold. This
+      is cheap and safe: nothing is rewritten, so nothing is fabricated. It simply throws away the padding.
+    </p>
+
+    <h4 class="subsection-title">Abstractive compression</h4>
+    <p>
+      Ask a small model to rewrite the retrieved context into a shorter, query-focused summary before it
+      reaches the generator. Methods in the <strong>LLMLingua</strong> family push this further, dropping
+      low-information tokens to compress prompts several-fold. More powerful than extraction, but it introduces
+      a second generation step that can itself distort or drop facts &mdash; so it needs its own faithfulness
+      checks.
+    </p>
+
+    <div class="aside">
+      <div class="aside-label">Compression is a budget decision, not a quality one</div>
+      <p>
+        The reason to compress is that context is scarce and its middle is weak. If your chunks are already
+        tight and you are nowhere near the window limit, compression adds cost and risk for little gain. Reach
+        for it when you are budget-constrained or when retrieved chunks are long and noisy &mdash; not by
+        default.
+      </p>
+    </div>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 8.5 Grounding & faithfulness ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 8.5 &nbsp;·&nbsp; correct is not the same as grounded</span>
+    <h3 class="section-title">Grounding, citation, and faithfulness</h3>
+
+    <p>
+      There is a distinction at the heart of RAG that is easy to blur. An answer can be <em>correct</em> &mdash;
+      true in the world &mdash; while being <em>ungrounded</em> &mdash; not actually supported by the retrieved
+      context. The model knew it from pre-training and said it anyway. For a trivia bot that is fine. For a
+      system that must be auditable &mdash; legal, medical, financial &mdash; it is a failure, because you
+      cannot show <em>where</em> the answer came from, and next time the same behaviour will produce something
+      confidently wrong.
+    </p>
+
+    <p>
+      <strong>Faithfulness</strong> (or groundedness) is the property that every claim in the answer is
+      entailed by the provided context. It is the thing RAG is actually for. You encourage it three ways:
+    </p>
+
+    <ul>
+      <li><strong>Instruction.</strong> Tell the model explicitly to answer only from the context, and to say
+      it does not know when the context is silent. Then give it permission to refuse &mdash; models over-answer
+      partly because prompts never allow the alternative.</li>
+      <li><strong>Citation.</strong> Require the model to attribute each claim to a source label from the
+      assembled context (<code>[2]</code>, <code>[5]</code>). Citations make grounding checkable by a human and
+      by an evaluator, and the act of citing nudges the model to stay close to the evidence.</li>
+      <li><strong>Verification.</strong> For high-stakes systems, run a second pass that checks each sentence of
+      the answer against the cited chunk and flags anything unsupported.</li>
+    </ul>
+
+    <p>
+      RAG reduces hallucination; it does not abolish it. The model can still misread context, blend two
+      sources, or fall back on its parameters when the context is thin. Grounding is what turns
+      &ldquo;probably right&rdquo; into &ldquo;right, and here is why.&rdquo;
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 8.6 Agentic / iterative ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 8.6 &nbsp;·&nbsp; when one pass is not enough</span>
+    <h3 class="section-title">Iterative and agentic generation</h3>
+
+    <p>
+      Everything so far assumes a single shot: retrieve once, generate once. For hard questions that is not
+      enough &mdash; the answer needs facts that no single query surfaces, or the first retrieval comes back
+      weak and the system should notice and try again. A family of patterns closes the loop.
+    </p>
+
+    <p>
+      <strong>Query decomposition.</strong> Break a compound question (&ldquo;how did the two companies&rsquo;
+      margins compare after the merger?&rdquo;) into sub-questions, retrieve for each, and synthesise. Each
+      sub-question is easier to retrieve for than the whole.
+    </p>
+
+    <p>
+      <strong>Corrective RAG (CRAG).</strong> After retrieving, grade the results. If they look strong,
+      generate. If they look weak, take a corrective action &mdash; rewrite the query, widen the search, or
+      fall back to web search &mdash; before generating. The system refuses to answer from bad evidence.
+    </p>
+
+    <p>
+      <strong>Self-RAG.</strong> Interleave retrieval and generation, letting the model decide <em>when</em> it
+      needs to retrieve and critique its own output against what it found, retrieving again if a claim is
+      unsupported. Generation becomes a loop of draft, check, and refine rather than a single forward pass.
+    </p>
+
+    <p class="big-idea">
+      Single-pass RAG answers the question you asked with the documents you found. Agentic RAG decides whether
+      those were the right documents, and the right question, before it commits to an answer.
+    </p>
+  </div>
+</section>
+
+
+<div class="divider">· · ·</div>
+
+
+<!-- ======================================================= -->
+<!-- CHAPTER 9 — EVALUATION                                   -->
+<!-- ======================================================= -->
+
+<section class="chapter" id="evaluation">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter Nine</div>
+    <h2 class="chapter-title">Evaluation: <em>the chapter everyone skips</em>.</h2>
+    <p class="chapter-summary">
+      A RAG system has many knobs and no obvious way to tell whether turning one helped. Without measurement,
+      every change is a guess and every &ldquo;improvement&rdquo; is a vibe. This chapter is how you replace
+      the vibe with a number &mdash; and how you make sure the number measures the right thing.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 9.0 Setup ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 9.0 &nbsp;·&nbsp; two failures, measured apart</span>
+    <h3 class="section-title">Retrieval and generation fail differently</h3>
+
+    <p>
+      When a RAG system gives a bad answer, there are two very different causes, and they need very different
+      fixes. Either <strong>retrieval failed</strong> &mdash; the right context was never found, so the model
+      never had a chance &mdash; or <strong>generation failed</strong> &mdash; the right context was right
+      there and the model still produced a bad answer.
+    </p>
+
+    <p>
+      The single most useful discipline in RAG evaluation is measuring these two halves <em>separately</em>. A
+      single end-to-end score tells you the system is bad; it does not tell you which half to fix, and so it
+      does not tell you what to do on Monday. Split the metrics, and every failure points at its own cause.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 9.1 Retrieval metrics ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 9.1 &nbsp;·&nbsp; scoring the shortlist</span>
+    <h3 class="section-title">Retrieval metrics</h3>
+
+    <p>
+      Retrieval metrics need a labelled set: queries paired with the documents that are <em>known</em> to be
+      relevant. Given that, four metrics do most of the work.
+    </p>
+
+    <h4 class="subsection-title">Recall@k and Precision@k</h4>
+    <p>
+      <strong>Recall@k</strong> &mdash; already met in Volume II &mdash; is the fraction of all relevant
+      documents that appear in your top-\(k\). It answers &ldquo;did we find the good stuff?&rdquo;
+      <strong>Precision@k</strong> is the fraction of your top-\(k\) that is relevant &mdash; &ldquo;how much of
+      what we returned was junk?&rdquo; For the first stage you care most about recall; for the final set fed
+      to the model you care about precision.
+    </p>
+
+    <h4 class="subsection-title">MRR — Mean Reciprocal Rank</h4>
+    <p>
+      When there is one right answer and you care where it landed, MRR is the metric. For each query take the
+      reciprocal of the rank of the first relevant result, and average across queries:
+    </p>
+
+    <div class="math-display">\[ \text{MRR} = \frac{1}{|Q|} \sum_{i=1}^{|Q|} \frac{1}{\text{rank}_i} \]</div>
+
+    <p>
+      First place scores 1, second place \(1/2\), fifth place \(1/5\). MRR rewards getting the right answer
+      near the very top and is unforgiving about burying it &mdash; exactly the property a reranker is meant to
+      improve.
+    </p>
+
+    <h4 class="subsection-title">nDCG — Normalised Discounted Cumulative Gain</h4>
+    <p>
+      MRR only sees the first relevant hit and treats relevance as binary. nDCG handles the general case: many
+      relevant documents, each with a <em>graded</em> relevance, and position mattering throughout the list. It
+      sums the relevance of each result, discounted by how far down it sits, then normalises against the best
+      possible ordering:
+    </p>
+
+    <div class="math-display">\[ \text{DCG@k} = \sum_{i=1}^{k} \frac{2^{\text{rel}_i} - 1}{\log_2(i + 1)} \qquad \text{nDCG@k} = \frac{\text{DCG@k}}{\text{IDCG@k}} \]</div>
+    <div class="math-caption">The log discount makes a relevant result at rank 2 worth more than one at rank 9; IDCG is the ideal ordering</div>
+
+    <p>
+      nDCG runs from 0 to 1, where 1 is a perfect ranking. It is the standard metric in information retrieval
+      precisely because it captures everything the simpler metrics leave out &mdash; graded relevance and
+      full-list position &mdash; in a single comparable number.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 9.2 Building an eval set ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 9.2 &nbsp;·&nbsp; the data you evaluate against</span>
+    <h3 class="section-title">Building the evaluation set</h3>
+
+    <p>
+      Every metric above needs ground truth, and ground truth is the part nobody wants to build. You need a set
+      of realistic queries, each paired with the documents that answer them and, ideally, a reference answer.
+      There is a chicken-and-egg problem: you want to evaluate the system before you have users, but real
+      queries come from users.
+    </p>
+
+    <p>
+      The common bootstrap is <strong>synthetic generation</strong>: walk your corpus, and for each chunk ask
+      an LLM to write a question that this chunk answers. Now you have query-document pairs for free, and the
+      document that generated the question is by construction its relevant result. It is not as good as real
+      traffic &mdash; synthetic questions are cleaner and more literal than what humans type &mdash; but it is
+      enough to start measuring, and it is infinitely better than nothing.
+    </p>
+
+    <p>
+      Once real queries arrive, mine them. Sample actual user questions, label the good and bad answers, and
+      fold them into the eval set. A living eval set that tracks real traffic is one of the most valuable
+      assets a RAG system has &mdash; it is what makes every future change measurable.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 9.3 The RAG triad ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 9.3 &nbsp;·&nbsp; scoring the answer</span>
+    <h3 class="section-title">The RAG triad</h3>
+
+    <p>
+      Retrieval metrics score the context. Generation metrics score the answer &mdash; but &ldquo;is this
+      answer good&rdquo; is too vague to measure directly. The widely-used decomposition (popularised by
+      frameworks like RAGAS and TruLens) breaks it into three relationships between the query, the retrieved
+      context, and the answer.
+    </p>
+
+    <div class="triad">
+      <svg viewBox="0 0 460 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The RAG triad: query, context, answer">
+        <style>
+          .vertex { fill: #EFE9DA; stroke: #B8AE97; stroke-width: 1.2; }
+          .vtext { font-family: "Fraunces", serif; font-size: 14px; fill: #1C1917; font-weight: 500; }
+          .edge3 { stroke: #B8722E; stroke-width: 1.6; }
+          .etext { font-family: "Inter", sans-serif; font-size: 10px; fill: #2E5266; font-weight: 600; letter-spacing: 0.04em; }
+          .esub { font-family: "Source Serif 4", serif; font-size: 9.5px; fill: #7A736A; font-style: italic; }
+        </style>
+        <!-- edges -->
+        <line x1="230" y1="55" x2="80" y2="205" class="edge3"/>
+        <line x1="230" y1="55" x2="380" y2="205" class="edge3"/>
+        <line x1="80" y1="205" x2="380" y2="205" class="edge3"/>
+        <!-- vertices -->
+        <rect x="180" y="30" width="100" height="34" rx="3" class="vertex"/>
+        <text x="230" y="52" class="vtext" text-anchor="middle">Query</text>
+        <rect x="20" y="205" width="120" height="34" rx="3" class="vertex"/>
+        <text x="80" y="227" class="vtext" text-anchor="middle">Context</text>
+        <rect x="320" y="205" width="120" height="34" rx="3" class="vertex"/>
+        <text x="380" y="227" class="vtext" text-anchor="middle">Answer</text>
+        <!-- edge labels -->
+        <text x="120" y="120" class="etext" text-anchor="middle">context</text>
+        <text x="120" y="133" class="etext" text-anchor="middle">relevance</text>
+        <text x="120" y="147" class="esub" text-anchor="middle">is the retrieval on-topic?</text>
+        <text x="340" y="120" class="etext" text-anchor="middle">answer</text>
+        <text x="340" y="133" class="etext" text-anchor="middle">relevance</text>
+        <text x="340" y="147" class="esub" text-anchor="middle">does it address the query?</text>
+        <text x="230" y="198" class="etext" text-anchor="middle">faithfulness</text>
+        <text x="230" y="185" class="esub" text-anchor="middle">is the answer grounded in the context?</text>
+      </svg>
+    </div>
+
+    <p>
+      <strong>Context relevance</strong> &mdash; is the retrieved context actually on-topic for the query? A
+      retrieval-side check. <strong>Faithfulness</strong> &mdash; is every claim in the answer supported by the
+      context? The grounding property from Chapter 8. <strong>Answer relevance</strong> &mdash; does the answer
+      actually address what was asked, rather than being true-but-beside-the-point?
+    </p>
+
+    <p>
+      The three localise faults precisely. Low context relevance is a retrieval problem. High context relevance
+      but low faithfulness is a generation problem &mdash; the model had the goods and ignored them. Everything
+      grounded but low answer relevance means the model answered a different question. One triad, three
+      diagnoses.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 9.4 LLM as judge ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 9.4 &nbsp;·&nbsp; grading at scale</span>
+    <h3 class="section-title">LLM-as-judge</h3>
+
+    <p>
+      Computing the triad by hand does not scale &mdash; you would need a human to read every answer against
+      every context. So the standard practice is to use a strong LLM as the grader: give it the query, the
+      context, and the answer, and ask it to score faithfulness or relevance, usually with a rubric and a
+      required justification.
+    </p>
+
+    <p>
+      It works well and it is cheap, but the judge has biases you must design around:
+    </p>
+
+    <ul>
+      <li><strong>Position bias.</strong> In pairwise comparisons, judges favour whichever answer came first.
+      Mitigate by running both orderings and averaging.</li>
+      <li><strong>Verbosity bias.</strong> Judges tend to rate longer answers higher regardless of quality.
+      Watch for it, and instruct against it.</li>
+      <li><strong>Self-preference.</strong> A judge tends to prefer text generated by itself or its own model
+      family. Where it matters, use a different model to judge than to generate.</li>
+    </ul>
+
+    <p>
+      The essential guardrail: <strong>validate the judge against humans</strong>. Have people grade a sample,
+      check that the LLM judge agrees with them, and only then trust it at scale. An unvalidated judge is just
+      a second opinion of unknown quality &mdash; measure its agreement before you build on it.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 9.5 Online eval ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 9.5 &nbsp;·&nbsp; the eval that never stops</span>
+    <h3 class="section-title">Online evaluation and drift</h3>
+
+    <p>
+      Everything so far is <em>offline</em> evaluation &mdash; a fixed eval set, run before you ship. It tells
+      you whether a change is better than what you had. It cannot tell you how the system behaves on live
+      traffic, which is always messier than any eval set.
+    </p>
+
+    <p>
+      <strong>Online</strong> evaluation watches the running system. Implicit signals &mdash; did the user
+      rephrase and try again, did they click the citation, did they copy the answer, thumbs up or down &mdash;
+      are noisy individually but powerful in aggregate. A/B tests compare two configurations on real users and
+      settle arguments that offline metrics leave open.
+    </p>
+
+    <p>
+      And a RAG system decays even if you touch nothing. The corpus grows and shifts, user questions move to
+      new topics, the world changes underneath fixed documents. This is <strong>drift</strong>, and the only
+      defence is continuous measurement: keep the eval set current, watch the online signals for a slide, and
+      re-check when the distribution moves.
+    </p>
+
+    <p class="big-idea">
+      Offline eval tells you if a change is good before you ship it. Online eval tells you if the system is
+      still good after the world has moved. You need both, and you never stop running either.
+    </p>
+  </div>
+
+  <!-- ~~~~~~~~~~~~~~~ 9.6 Synthesis ~~~~~~~~~~~~~~~ -->
+  <div class="section">
+    <span class="section-tag">§ 9.6 &nbsp;·&nbsp; the whole pipeline, in order</span>
+    <h3 class="section-title">Nine chapters, one system</h3>
+
+    <p>
+      Step back and the three volumes trace a single path. You started by <em>scoring</em> documents &mdash;
+      TF-IDF, BM25, dense, hybrid &mdash; and turning text into vectors with embeddings, then wrestled raw
+      documents into clean text. That was Volume I: the raw materials.
+    </p>
+
+    <p>
+      Volume II made it retrievable: <em>chunking</em> cut documents into the units you index, <em>vector
+      databases</em> stored the billions of resulting vectors and found nearest neighbours in milliseconds, and
+      <em>query processing</em> reshaped the user&rsquo;s question into something the retriever could match.
+      That was the top of the funnel.
+    </p>
+
+    <p>
+      And this volume finished it. <em>Reranking</em> took the wide, high-recall candidate set and sharpened it
+      to a precise few. <em>Generation</em> assembled those few into a prompt and produced a grounded,
+      cited answer. <em>Evaluation</em> wrapped the whole thing in measurement, so you can tell &mdash; not
+      guess &mdash; whether any of it works, and which stage to fix when it does not.
+    </p>
+
+    <p>
+      Each stage is a lever. The systems that win are rarely the ones with the fanciest single component;
+      they are the ones that measured every stage, found the weakest one, and fixed it &mdash; then did it
+      again. Retrieval, reranking, generation, evaluation. Build the funnel, then watch it.
+    </p>
+  </div>
+</section>
+
+
+<!-- ======================================================= -->
+<!-- CLOSING                                                  -->
+<!-- ======================================================= -->
+
+<div class="closing">
+  End of Volume III &nbsp;·&nbsp; nine chapters, complete &nbsp;·&nbsp; <em>retrieve, rerank, generate, and prove it.</em>
+</div>
+
+</main>
+
+</body>
+</html>

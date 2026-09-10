@@ -1238,6 +1238,26 @@ class ListNode:
         self.next = next
 
 
+def build_list(values):
+    dummy = ListNode(0)
+    tail = dummy
+
+    for value in values:
+        tail.next = ListNode(value)
+        tail = tail.next
+
+    return dummy.next
+
+
+def print_list(head):
+    result = []
+
+    while head:
+        result.append(head.val)
+        head = head.next
+
+    print(result)
+
 def reverseList(head: Optional[ListNode]) -> Optional[ListNode]:
     prev, curr = None, head
     while curr:
@@ -1354,6 +1374,15 @@ def mergeKLists(lists: List[Optional[ListNode]]) -> Optional[ListNode]:
 
     return dummy.next
 
+# lists = [
+#     build_list([1, 4, 5]),
+#     build_list([1, 3, 4]),
+#     build_list([2, 6])
+# ]
+#
+# result = mergeKLists(lists)
+#
+# print_list(result)
 
 
 
@@ -3133,3 +3162,30 @@ class LRUCache:
             self._remove(lru)
             del self.map[lru.key]
 
+
+
+def maximumSubarraySum(nums: List[int], k: int) -> int:
+
+    result = 0
+    j = 0
+    n = len(nums)
+
+    for i in range(0, n-k):
+        j_counter = k
+        j = i
+        temp_result = 0
+        while j < j_counter:
+            temp_result += nums[j]
+            result = max(result, temp_result)
+            j += 1
+            j_counter += 1
+
+    return result
+
+
+nums = [1, 5, 4, 2, 9, 9, 9]
+k = 3
+
+print("================")
+print(maximumSubarraySum(nums, k))
+print("================")

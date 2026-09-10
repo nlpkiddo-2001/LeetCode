@@ -235,7 +235,7 @@ print(g5_n_cpus_m_tasks_min_time(tasks, N))
 # PART D — DESIGN / STREAMING / RATE-LIMITING  (your #2 lives here)
 # =============================================================================
 
-def d1_logger_rate_limiter():
+def d1_logger_rate_limiter(messages):
     """
     D1. Logger Rate Limiter — dedupe within a time window   <-- YOUR #2 QUESTION
     Difficulty: Easy base, scales with twists
@@ -253,6 +253,21 @@ def d1_logger_rate_limiter():
       - Return count of dropped messages per window.
     Link: https://leetcode.com/problems/logger-rate-limiter/
     """
+    next_allowed = {}
+    result = []
+
+    for timestamp, message in messages:
+        if message not in next_allowed:
+            result.append(message)
+            next_allowed[message] = timestamp + 10
+
+        elif timestamp >= next_allowed[message]:
+            result.append(message)
+            next_allowed[message] = timestamp + 10
+
+        # else drop
+
+    return result
 
 
 def d2_rate_limiter_multi_strategy():
