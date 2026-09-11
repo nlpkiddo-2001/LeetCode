@@ -63,12 +63,19 @@ No pipeline parallelism, one replica per machine.
 I used FP8 quantized checkpoints — I pulled ready-made ones, I didn't quantize them myself — and FP8 helps two ways: the weights are smaller so there's less memory to move, and that frees up room for a bigger KV cache, which means bigger batches.
 
 Now the actual optimization, which is the interesting part. 
-My baseline was basically stock vLLM with default round-robin routing. 
-Because I knew the workload was prefill-heavy and the big inputs often shared a lot of common context, the single biggest lever was prefix caching — vLLM reuses the KV cache for a shared prefix instead of recomputing it every time. 
-On 100k-token inputs, that's a huge saving. But prefix caching only helps if the request actually lands on the GPU that already has that prefix cached. 
-With plain round-robin, it doesn't. 
-So I replaced round-robin with AIBrix, which does prefix-aware routing — it looks at the prefix, plus each GPU's cache state, how many requests are running, and how many are waiting, and routes accordingly. 
-That's what made the cache actually hit.
+My baseline was stock vLLM with round-robin routing. I noticed that although prefix caching was enabled, we weren't getting the full benefit from it.
+
+The reason was that requests with the same prefix could get routed to different GPUs. 
+So one GPU might already have the KV cache for a 100K-token prefix, but the next request could land on another GPU and recompute the entire prefix.
+I identified that **cache locality was the missing piece**, so I implemented a prefix-aware routing strategy.
+For every incoming request, I looked at its prefix and tracked which GPUs already had that prefix cached. 
+If a matching cache existed, I preferred routing the request to that GPU. 
+I also considered the current load — running and queued requests — so that we didn't blindly send everything to one GPU and create a hotspot.
+So the routing decision was essentially:
+**prefix match + cache state + current GPU load → best GPU**
+This made prefix caching actually useful. Instead of just having the cache available, we were deliberately routing requests to where the cached prefix already existed.
+That was one of the biggest optimizations I implemented because with our 100K-token inputs, avoiding recomputation of a shared prefix had a significant impact on both throughput and latency.
+
 
 Then chunked prefill. 
 Normally a 100k-token prefill hogs the whole GPU and blocks everyone else's decode, which spikes time-to-first-token for other users. 
