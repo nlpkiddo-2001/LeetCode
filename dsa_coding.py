@@ -3150,6 +3150,7 @@ class LRUCache:
         self._add_front(node)
         return node.val
 
+
     def _put(self, key, value):
         if key in self.map:
             self._remove(self.map[key])
@@ -3164,28 +3165,69 @@ class LRUCache:
 
 
 
-def maximumSubarraySum(nums: List[int], k: int) -> int:
 
-    result = 0
-    j = 0
-    n = len(nums)
+from collections import defaultdict
+import heapq
 
-    for i in range(0, n-k):
-        j_counter = k
-        j = i
-        temp_result = 0
-        while j < j_counter:
-            temp_result += nums[j]
-            result = max(result, temp_result)
-            j += 1
-            j_counter += 1
+
+def highFive(items):
+
+    students = defaultdict(list)
+
+    for student_id, score in items:
+        heapq.heappush(students[student_id], score)
+
+        if len(students[student_id]) > 5:
+            heapq.heappop(students[student_id])
+
+    result = []
+
+    for student_id in sorted(students):
+
+        scores = students[student_id]
+        avg_score = sum(scores) // 5
+        result.append([student_id, avg_score])
 
     return result
 
 
-nums = [1, 5, 4, 2, 9, 9, 9]
-k = 3
+def judgeCircle(moves: str) -> bool:
 
-print("================")
-print(maximumSubarraySum(nums, k))
-print("================")
+    x = 0
+    y = 0
+
+    for move in moves:
+        if move == "R":
+            x += 1
+        elif move == "L":
+            x -= 1
+        elif move == "U":
+            y += 1
+        else:
+            y -= 1
+
+    return x == 0 and y == 0
+
+
+def romanToInt(s: str):
+    values = {
+        "I" : 1,
+        "V" : 5,
+        "X" : 10,
+        "L" : 50,
+        "C" : 100,
+        "D" : 500,
+        "M" : 1000
+     }
+
+    result = 0
+    for i in range(len(s)):
+
+        current = values[s[i]]
+
+        if i + 1 < len(s) and current < values[s[i+1]]:
+            result -= current
+        else:
+            result += current
+
+    return result
