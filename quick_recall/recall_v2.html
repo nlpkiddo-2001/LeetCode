@@ -159,13 +159,16 @@ function cxClass(c){
 }
 function hl(code){
   code = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  code = code.replace(/(#[^\n]*)/g,'<span class="cm">$1</span>');
-  code = code.replace(/('[^'\n]*'|"[^"\n]*")/g,'<span class="s">$1</span>');
   const kw=['def','return','if','elif','else','for','while','in','not','and','or','None','True','False','class','self','import','from','as','with','try','except','finally','lambda','yield','break','continue','pass','nonlocal','global','is','raise'];
-  const kwRe = new RegExp('\\b('+kw.join('|')+')\\b','g');
-  code = code.replace(kwRe,'<span class="k">$1</span>');
-  code = code.replace(/\b(\d+)\b/g,'<span class="num">$1</span>');
-  return code;
+  // One pass, alternation ordered comment > string > keyword > number. Sequential
+  // passes would re-scan the spans they just emitted - and 'class' is a keyword.
+  const re = new RegExp("(#[^\\n]*)|('[^'\\n]*'|\"[^\"\\n]*\")|(\\b(?:"+kw.join('|')+")\\b)|(\\b\\d+\\b)",'g');
+  return code.replace(re,function(m,cm,str,k,num){
+    if(cm!==undefined)  return '<span class="cm">'+cm+'</span>';
+    if(str!==undefined) return '<span class="s">'+str+'</span>';
+    if(k!==undefined)   return '<span class="k">'+k+'</span>';
+    return '<span class="num">'+num+'</span>';
+  });
 }
 const DATA=[];
 DATA.push({id:'arrays',name:'Arrays & Hashing',tpl:'a hash map buys O(1) lookup \u2014 trade space for time',items:[
