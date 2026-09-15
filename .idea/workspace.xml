@@ -4,28 +4,23 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9bb6a744-9cc7-4cd2-a407-7c806e0e385e" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../pytorch_learning/modules/01_tensor/tensor_dev.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BinarySearch/BinarySerach.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../LongestPalindrome/LongestPalindrome.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../LongestSubString/LongestSubString.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../LongestSubString/QuickSort.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MaxIncreaseToKeepCitySkyline/MaxIncreaseToKeepCitySkyline.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MedianOfTwoSortedArrays/MedianOfTwoSortedArrays.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ReverseLinkedList/ReverseLinkedList.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../SearchInsertion/SearchInsertion.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../all_leetcode_problems/LeetCoding.java" beforeDir="false" />
+    <list default="true" id="9bb6a744-9cc7-4cd2-a407-7c806e0e385e" name="Changes" comment="MAANG Engineer Practicing :)">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dsa_coding.py" beforeDir="false" afterPath="$PROJECT_DIR$/dsa_coding.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ml_coding.py" beforeDir="false" afterPath="$PROJECT_DIR$/ml_coding.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/node.py" beforeDir="false" afterPath="$PROJECT_DIR$/dsa_coding.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rotateArray/rotateArray.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/quick_recall/recall_v2.html" beforeDir="false" afterPath="$PROJECT_DIR$/quick_recall/recall_v2.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="12" />
+    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
+  </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -39,6 +34,69 @@
     &quot;accountId&quot;: &quot;3121ac55-baf9-4caf-a345-63fcff11466c&quot;
   }
 }</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0000001208737979" />
+      <entry key="MS500" value="1.0478236861418218" />
+      <entry key="S2" value="2.295847714276428" />
+      <entry key="S5" value="5.75859125226683" />
+      <entry key="S10" value="11.360747810260355" />
+      <entry key="S30" value="26.283090114066802" />
+      <entry key="S60" value="43.50110469749581" />
+      <entry key="M2" value="69.90933387382944" />
+      <entry key="M5" value="111.7348391719965" />
+      <entry key="M10" value="152.2943810746425" />
+      <entry key="M15" value="183.4594484566309" />
+      <entry key="M30" value="244.9535320146144" />
+      <entry key="H1" value="319.978443108832" />
+      <entry key="H2" value="448.0725056807341" />
+      <entry key="H4" value="708.5994167473299" />
+      <entry key="D1" value="1510.4384395656348" />
+      <entry key="W1" value="1790.530171614117" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="5.757216183520031E-120" />
+      <entry key="S2" value="1.549006122693614E-30" />
+      <entry key="S5" value="1.1913003071390473E-12" />
+      <entry key="S10" value="1.0914683813540102E-6" />
+      <entry key="S30" value="0.010470865361861098" />
+      <entry key="S60" value="0.12016721953527867" />
+      <entry key="M2" value="0.5119254828450789" />
+      <entry key="M5" value="1.4309727673083148" />
+      <entry key="M10" value="2.2078233830957465" />
+      <entry key="M15" value="2.697404112762548" />
+      <entry key="M30" value="3.8724217752040326" />
+      <entry key="H1" value="7.828976644003853" />
+      <entry key="H2" value="18.085612180392157" />
+      <entry key="H4" value="36.204903303001835" />
+      <entry key="D1" value="83.4957290370134" />
+      <entry key="W1" value="99.05789611219443" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="0.8408965197534433" />
+      <entry key="MS500" value="1.0104690177032318" />
+      <entry key="S2" value="2.157688269984726" />
+      <entry key="S5" value="5.453409479227074" />
+      <entry key="S10" value="10.985595190790663" />
+      <entry key="S30" value="25.967693722394056" />
+      <entry key="S60" value="43.33761749733461" />
+      <entry key="M2" value="70.18775148772853" />
+      <entry key="M5" value="113.01393816766755" />
+      <entry key="M10" value="154.38963204922578" />
+      <entry key="M15" value="186.06028946692322" />
+      <entry key="M30" value="248.7562554563132" />
+      <entry key="H1" value="327.76083962884735" />
+      <entry key="H2" value="466.12656024707184" />
+      <entry key="H4" value="744.7812298949408" />
+      <entry key="D1" value="1593.9267618532122" />
+      <entry key="W1" value="1889.5868340510233" />
+    </decayedShown>
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 0
 }</component>
@@ -50,8 +108,12 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/vipin-16319/PycharmProjects/personal_coding/py_leetcode_75&quot;,
@@ -60,6 +122,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;editor.preferences.completion.popup&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
@@ -67,8 +130,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-b26f3e71634d-JavaScript-PY-251.26094.141" />
-        <option value="bundled-python-sdk-9f8e2b94138c-36ea0e71a18c-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.26094.141" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-PY-261.24374.152" />
+        <option value="bundled-python-sdk-c59985aa861c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.24374.152" />
       </set>
     </attachedChunks>
   </component>
@@ -81,10 +144,56 @@
       <updated>1768832645234</updated>
       <workItem from="1768832646279" duration="6828000" />
       <workItem from="1769154791799" duration="124000" />
+      <workItem from="1783837175434" duration="126000" />
+      <workItem from="1783837305754" duration="1107000" />
+      <workItem from="1783918581193" duration="5183000" />
+      <workItem from="1783933912997" duration="706000" />
+      <workItem from="1783934674700" duration="17000" />
+      <workItem from="1783934767871" duration="7017000" />
+      <workItem from="1784010200861" duration="377000" />
+      <workItem from="1784011022276" duration="10447000" />
+      <workItem from="1784093773332" duration="31000" />
     </task>
+    <task id="LOCAL-00001" summary="MAANG Engineer Practicing :)">
+      <option name="closed" value="true" />
+      <created>1783920698007</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1783920698007</updated>
+    </task>
+    <task id="LOCAL-00002" summary="MAANG Engineer Practicing :)">
+      <option name="closed" value="true" />
+      <created>1783923747956</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1783923747956</updated>
+    </task>
+    <task id="LOCAL-00003" summary="MAANG Engineer Practicing :)">
+      <option name="closed" value="true" />
+      <created>1784027579414</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1784027579414</updated>
+    </task>
+    <task id="LOCAL-00004" summary="MAANG Engineer Practicing :)">
+      <option name="closed" value="true" />
+      <created>1784033302639</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1784033302639</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="MAANG Engineer Practicing :)" />
+    <option name="LAST_COMMIT_MESSAGE" value="MAANG Engineer Practicing :)" />
   </component>
 </project>
