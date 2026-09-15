@@ -290,6 +290,37 @@ code:`def longestConsecutive(nums):
 dry:{base:'nums=[] \u2192 return 0  |  nums=[5] \u2192 set={5}, 4\u2209set, streak=1 \u2192 1',
 happy:'[0,3,2,5,4,6,1,1]\n set={0,1,2,3,4,5,6}\n start at 0 (\u22121\u2209set): walk 1,2,3,4,5,6 \u2192 streak=7\n starts at 1,2,3,4,5,6: predecessor present \u2192 SKIP\n \u2192 7',
 fail:'Skip the predecessor check \u2192 each number restarts a walk \u2192 O(n\u00b2) on [1,2,3,\u2026,n]. The check is what makes it linear.'}},
+{n:'Roman to Integer',cx:'O(n)',trig:'"convert a roman numeral to an integer", subtractive pairs IV IX XL XC CD CM',ex:'MCMXCIV → 1000 − 100 + 1000 − 10 + 100 − 1 + 5 = 1994',key:'Scan left to right: a symbol smaller than the one after it is subtractive — subtract it, otherwise add it.',steps:['Map symbol → value','For each i: cur = val[s[i]]','If i+1 in range and cur < val[s[i+1]] → result −= cur','Else result += cur'],trap:'The look-one-ahead comparison already encodes subtraction — no need to special-case the six pairs.',
+code:`def romanToInt(s):
+    val = {'I':1,'V':5,'X':10,'L':50,'C':100,'D':500,'M':1000}
+    result = 0
+    for i in range(len(s)):
+        cur = val[s[i]]
+        if i + 1 < len(s) and cur < val[s[i + 1]]:
+            result -= cur
+        else:
+            result += cur
+    return result`,
+dry:{base:'s="" → loop skipped → 0   |   s="I" → no next symbol → 1',
+happy:'s = MCMXCIV\n i=0  M 1000  next C 100    1000 > 100  → +1000   res=1000\n i=1  C 100   next M 1000   100 < 1000  → −100    res=900\n i=2  M 1000  next X 10     1000 > 10   → +1000   res=1900\n i=3  X 10    next C 100    10 < 100    → −10     res=1890\n i=4  C 100   next I 1      100 > 1     → +100    res=1990\n i=5  I 1     next V 5      1 < 5       → −1      res=1989\n i=6  V 5     no next                    → +5      res=1994',
+fail:'Dropping the i+1 bounds check → IndexError on the last symbol. Adding unconditionally → IV returns 6 instead of 4.'}},
+
+{n:'Robot Return to Origin',cx:'O(n)',trig:'"robot moves U D L R, does it end where it started"',ex:'UD → y goes +1 then −1 → back at (0,0) → true',key:'Only the net displacement matters — track a running (x, y) and ignore the path entirely.',steps:['x = y = 0','R → x+1, L → x−1, U → y+1, D → y−1','Return x == 0 and y == 0'],trap:'Balance is per axis, not overall: UUDDLR is true, UULR is not. Two counters, never one.',
+code:`def judgeCircle(moves):
+    x = y = 0
+    for m in moves:
+        if m == 'R':
+            x += 1
+        elif m == 'L':
+            x -= 1
+        elif m == 'U':
+            y += 1
+        else:
+            y -= 1
+    return x == 0 and y == 0`,
+dry:{base:'moves="" → loop skipped → x=y=0 → True',
+happy:'moves = UDLR\n U → (0, 1)\n D → (0, 0)\n L → (−1, 0)\n R → (0, 0)\n x == 0 and y == 0 → True',
+fail:'LL → (−2, 0) → False. One combined "moves seen" counter would call LL balanced at length 2 — x and y must be tracked separately.'}},
 ]});
 
 DATA.push({id:'twoptr',name:'Two Pointers',tpl:'sort (if order is free), converge from both ends, skip duplicates',items:[
@@ -395,6 +426,63 @@ code:`def sort012(arr):
 dry:{base:'arr=[] \u2192 lo=mid=0, hi=-1 \u2192 mid>hi loop skipped \u2192 []',
 happy:'[0,1,2,0,1,2]  lo=mid=0, hi=5\n mid=0 v=0 swap[0,0] arr unchanged     lo=mid=1\n mid=1 v=1 mid=2\n mid=2 v=2 swap[2,5] arr=[0,1,2,0,1,2]  hi=4\n mid=2 v=2 swap[2,4] arr=[0,1,1,0,2,2]  hi=3\n mid=2 v=1 mid=3\n mid=3 v=0 swap[1,3] arr=[0,0,1,1,2,2]  lo=mid=4\n mid>hi \u2192 stop \u2192 [0,0,1,1,2,2]',
 fail:'Advancing mid after swapping with hi (v=2 case) \u2192 you never inspect the value that came from the tail; a 0 there stays put. Only advance mid on 0/1.'}},
+{n:'String Compression (in-place)',cx:'O(n) time, O(1) space',trig:'"compress runs in place and return the new length", modify the input array',ex:'[a,a,a,b,b] → a3b2 → write index 4',key:'Two indices: read scans a whole run, write emits it. Counts above 1 are written one digit at a time.',steps:['read = write = 0','While read < n: cur = chars[read], count = 0','Advance read while chars[read] == cur, counting','chars[write] = cur; write += 1','If count > 1: for digit in str(count) → chars[write] = digit; write += 1','Return write'],trap:'write can never overtake read (a run of length L costs at most 1 + len(str(L)) ≤ L cells), which is what makes in-place safe.',
+code:`def compress(chars):
+    read = write = 0
+    while read < len(chars):
+        cur = chars[read]
+        count = 0
+        while read < len(chars) and chars[read] == cur:
+            read += 1
+            count += 1
+        chars[write] = cur
+        write += 1
+        if count > 1:
+            for digit in str(count):
+                chars[write] = digit
+                write += 1
+    return write`,
+dry:{base:'chars=[] → while skipped → 0   |   [a] → count=1 so no digits written → 1',
+happy:'chars = [a,a,a,b,b,c,c,c]\n read=0 cur=a: run ends read=3 count=3\n   chars[0]=a write=1 ; digits "3" → chars[1]=3 write=2\n read=3 cur=b: run ends read=5 count=2\n   chars[2]=b write=3 ; digits "2" → chars[3]=2 write=4\n read=5 cur=c: run ends read=8 count=3\n   chars[4]=c write=5 ; digits "3" → chars[5]=3 write=6\n return 6, chars[:6] = [a,3,b,2,c,3]',
+fail:'Writing chars[write] = count stores the integer 12 in a single cell — any run of 10 or more breaks. Always str(count) then loop the digits.'}},
+
+{n:'Reverse Words in a String',cx:'O(n) time, O(1) extra',trig:'"reverse the order of the words but keep each word readable"',ex:'hello.world.python → python.world.hello',key:'Reverse the whole string, then reverse each word span back — the double reversal flips word order while restoring the letters.',steps:['Reverse the entire character list','Scan for word spans, skipping delimiters','Reverse each span [l, r−1] in place','Join and return'],trap:'One reversal alone gives nohtyp.dlrow.olleh — the per-word reversal is the second half of the trick.',
+code:`def reverseWords(s, sep='.'):
+    chars = list(s)[::-1]
+
+    def rev(i, j):
+        while i < j:
+            chars[i], chars[j] = chars[j], chars[i]
+            i += 1
+            j -= 1
+
+    n = len(chars)
+    l = 0
+    while l < n:
+        if chars[l] == sep:
+            l += 1
+            continue
+        r = l
+        while r < n and chars[r] != sep:
+            r += 1
+        rev(l, r - 1)
+        l = r
+    return ''.join(chars)`,
+dry:{base:'s="" → chars=[] → ""   |   a single word → reversed twice → unchanged',
+happy:'s = hello.world.python\n step 1  reverse everything → nohtyp.dlrow.olleh\n step 2  reverse each word span:\n   [0,5]   nohtyp → python   → python.dlrow.olleh\n   [7,11]  dlrow  → world    → python.world.olleh\n   [13,17] olleh  → hello    → python.world.hello',
+fail:'Without the skip-delimiter branch, l parks on a separator and the outer while never terminates. The l += 1 then continue is the guard.'}},
+
+{n:'Remove Spaces (in-place filter)',cx:'O(n) time, O(1) space',trig:'"strip every space / remove all occurrences of a value in place"',ex:'[a, ,b, ,c] → abc → write index 3',key:'Same read/write split as compression: read visits every cell, write only advances on the keepers.',steps:['write = 0','For read in range(n): if chars[read] is not the target','chars[write] = chars[read]; write += 1','Return write — everything past it is stale'],trap:'Return write, not len(chars), or the stale tail stays visible. Same skeleton as Remove Element and Move Zeroes.',
+code:`def removeSpaces(chars):
+    write = 0
+    for read in range(len(chars)):
+        if chars[read] != ' ':
+            chars[write] = chars[read]
+            write += 1
+    return write`,
+dry:{base:'chars=[] → 0   |   all spaces → write never advances → 0',
+happy:'chars = [a, ,b, ,c]\n read=0  a   keep → chars[0]=a  write=1\n read=1  sp  skip\n read=2  b   keep → chars[1]=b  write=2\n read=3  sp  skip\n read=4  c   keep → chars[2]=c  write=3\n return 3, chars[:3] = abc',
+fail:'Calling del chars[i] inside the loop is O(n²) and shifts the very element you are about to visit, so adjacent spaces get skipped. The write pointer avoids both.'}},
 ]});
 DATA.push({id:'window',name:'Sliding Window',tpl:'expand right; shrink left while invalid; track best',items:[
 {n:'Longest Substring w/o Repeat',cx:'O(n)',trig:'"longest substring with all-unique characters"',ex:'"abcabcbb" \u2192 window "abc" = 3',key:'Grow right; on a repeat, shrink left past the previous copy of that char.',steps:['Set + start pointer','For end: while s[end] in set \u2192 remove s[start], start++','Add s[end]','max = end\u2212start+1'],trap:'Shrink with a WHILE, not an if.',
@@ -529,6 +617,26 @@ code:`def decodeString(s):
 dry:{base:'s="" \u2192 ""  |  "abc" (no brackets) \u2192 "abc"',
 happy:'"3[a2[c]]"\n 3: k=3\n [: push ("",3) cur="" k=0\n a: cur="a"\n 2: k=2\n [: push ("a",2) cur="" k=0\n c: cur="c"\n ]: pop ("a",2) \u2192 cur = "a" + "c"*2 = "acc"\n ]: pop ("",3) \u2192 cur = "" + "acc"*3 = "accaccacc"\n \u2192 "accaccacc"',
 fail:'k = int(ch) (no *10) breaks on 12[a] \u2014 reads only the 2. Always accumulate: k = k*10 + digit.'}},
+{n:'Decode String (no brackets)',cx:'O(total output)',trig:'"3a2bc style run-length expansion", counts prefix the letters, no nesting',ex:'3a2bc → aaa + bcbc → aaabcbc',key:'No brackets means no nesting means no stack — one pass with two inner while loops (digits, then letters) is enough.',steps:['i = 0, result = ""','Inner while over digits: k = k*10 + int(s[i])','Inner while over letters: build chunk','result += chunk * k','Repeat until i reaches the end'],trap:'Multi-digit counts need k = k*10 + d, not k = d. Reset both k and chunk every outer round.',
+code:`def decodeStringNoBrackets(s):
+    result = ''
+    i = 0
+    while i < len(s):
+        k = 0
+        while i < len(s) and s[i].isdigit():
+            k = k * 10 + int(s[i])
+            i += 1
+
+        chunk = ''
+        while i < len(s) and s[i].isalpha():
+            chunk += s[i]
+            i += 1
+
+        result += chunk * k
+    return result`,
+dry:{base:'s="" → outer while skipped → ""   |   s="abc" with no digit → k=0 → chunk*0 = "" (clarify whether a bare word means k=1)',
+happy:'s = 12ab3c\n round 1  digits 1 then 2 → k = 1*10+2 = 12\n          letters a,b        → chunk = ab\n          result += ab * 12\n round 2  digits 3          → k = 3\n          letters c          → chunk = c\n          result += ccc\n i == len(s) → stop',
+fail:'Give this the nested form 3[a2[c]] and it collapses — that needs the stack version that pushes (prefix, k) on [ and pops on ]. Confirm the input shape before choosing.'}},
 ]});
 
 DATA.push({id:'bsearch',name:'Binary Search',tpl:'shrink [l,r]; decide which half is sorted / holds the answer',items:[
@@ -987,6 +1095,64 @@ def kthLargest(nums, k):
 dry:{base:'k=len(nums) \u2192 heap ends up holding everything, root = min = kth largest \u2713',
 happy:'nums=[3,2,1,5,6,4] k=2\n push 3: pq=[3]\n push 2: pq=[2,3]  (size==k, stop popping)\n push 1: pq=[1,2,3] pop min \u2192 pq=[2,3]\n push 5: pq=[2,3,5] pop 2  \u2192 pq=[3,5]\n push 6: pq=[3,5,6] pop 3  \u2192 pq=[5,6]\n push 4: pq=[4,5,6] pop 4  \u2192 pq=[5,6]\n \u2192 root=5 (2nd largest)',
 fail:'Using a max-heap of size k \u2192 you\u2019d kick out the LARGEST every overflow \u2192 root becomes the min after n pops \u2192 wrong. Min-heap keeps the top-k; its root is the smallest of those = k-th largest.'}},
+{n:'Top K Frequent (stream, size-k heap)',cx:'O(n log k)',trig:'"k most frequent in a stream", n unknown or too large to bucket',ex:'A,B,A,C,B,A,D,C,A with k=2 → counts A:4 C:2 → [C, A]',key:'Count first, then push (count, element) into a min-heap and evict the root whenever it exceeds k — the least frequent is always first out.',steps:['freq = Counter(stream)','For each (element, count): heappush(heap, (count, element))','If len(heap) > k → heappop, dropping the least frequent so far','Return the elements left in the heap'],trap:'Bucket sort is O(n) but needs all n up front and a frequency-indexed array — the heap is the streaming answer. Heap output is not sorted; sort it if order matters.',
+code:`import heapq
+from collections import Counter
+
+def topKFrequent(stream, k):
+    freq = Counter(stream)
+    heap = []
+    for element, count in freq.items():
+        heapq.heappush(heap, (count, element))
+        if len(heap) > k:
+            heapq.heappop(heap)
+    return [element for _, element in heap]`,
+dry:{base:'stream=[] → freq empty → heap empty → []   |   k ≥ distinct count → nothing is ever evicted',
+happy:'stream = [A,B,A,C,B,A,D,C,A]  k=2\n freq = {A:4, B:2, C:2, D:1}\n push (4,A)   heap=[(4,A)]                  size 1\n push (2,B)   heap=[(2,B),(4,A)]            size 2  ok\n push (2,C)   size 3 > 2 → pop root (2,B)   heap=[(2,C),(4,A)]\n push (1,D)   size 3 > 2 → pop root (1,D)   heap=[(2,C),(4,A)]\n → [C, A]',
+fail:'A max-heap with the same evict-the-root rule throws away the MOST frequent element. Min-heap plus evict-root is the pairing — the root you discard must be the weakest candidate.'}},
+
+{n:'High Five',cx:'O(n log 5) ≈ O(n)',trig:'"average of each student top five scores", records given as [id, score] pairs',ex:'one size-5 min-heap per student; the root is the weakest of the five kept',key:'One bounded min-heap per key — push every score, pop once the heap passes 5, so only the best five ever survive.',steps:['students = defaultdict(list), each list used as a heap','heappush(students[id], score)','If len > 5 → heappop, dropping the lowest kept score','For each id in sorted order: avg = sum(scores) // 5'],trap:'Divide by the fixed 5, not len(scores) — the problem guarantees at least five per student. Sort the ids so the output is deterministic.',
+code:`import heapq
+from collections import defaultdict
+
+def highFive(items):
+    students = defaultdict(list)
+    for student_id, score in items:
+        heapq.heappush(students[student_id], score)
+        if len(students[student_id]) > 5:
+            heapq.heappop(students[student_id])
+
+    result = []
+    for student_id in sorted(students):
+        scores = students[student_id]
+        result.append([student_id, sum(scores) // 5])
+    return result`,
+dry:{base:'items=[] → no students → []   |   exactly 5 scores → nothing is ever evicted',
+happy:'student 1 scores arrive: 91, 92, 60, 65, 87, 100\n push 91    [91]\n push 92    [91,92]\n push 60    [60,92,91]\n push 65    [60,65,91,92]\n push 87    [60,65,91,92,87]        size 5  ok\n push 100   size 6 > 5 → pop root 60 → [65,87,91,92,100]\n sum = 435,  435 // 5 = 87  → [1, 87]',
+fail:'Keeping every score and sorting per student is O(n log n) per student and unbounded memory. The size-5 cap makes each push log 5 no matter how many scores arrive.'}},
+
+{n:'Priority Map (lazy deletion)',cx:'O(log n) insert, amortised O(log n) peek',trig:'"a heap whose priorities can be updated", stale entries, "give me the current top key"',ex:'insert(a,1) then insert(a,9): the old (−1,a) is stale — discard it only when it surfaces',key:'Python heaps have no decrease-key, so never delete: push the new (priority, key) and drop stale roots lazily on read, validating each root against the dict.',steps:['dict data[key] = priority is the source of truth','insert: data[key] = p, then heappush(heap, (−p, key)) for max-heap order','peek: read the root; if data[key] != its priority it is stale — heappop and retry','Otherwise return the key'],trap:'Validate against the dict, not a visited set — a key can be re-inserted many times. Each update leaves a stale copy, so the heap can grow past n.',
+code:`import heapq
+
+class PriorityMap:
+    def __init__(self):
+        self.data = {}
+        self.heap = []
+
+    def insert(self, key, priority):
+        self.data[key] = priority
+        heapq.heappush(self.heap, (-priority, key))
+
+    def peek(self):
+        while self.heap:
+            neg_priority, key = self.heap[0]
+            if self.data[key] == -neg_priority:
+                return key
+            heapq.heappop(self.heap)
+        return None`,
+dry:{base:'empty heap → while skipped → None   |   no updates → the root is never stale, peek is O(1)',
+happy:'insert(a,1); insert(b,5); insert(a,9); peek()\n insert(a,1)  data={a:1}       heap=[(−1,a)]\n insert(b,5)  data={a:1,b:5}   heap=[(−5,b),(−1,a)]\n insert(a,9)  data={a:9,b:5}   heap=[(−9,a),(−1,a),(−5,b)]\n peek: root (−9,a) → data[a] = 9 == 9 → return a\n the stale (−1,a) stays buried until it ever reaches the root',
+fail:'Eagerly removing the old entry means an O(n) scan of the heap per update. Skipping the staleness check returns a downgraded key — here a would come back later claiming priority 1.'}},
 ]});
 
 DATA.push({id:'backtrack',name:'Backtracking',tpl:'choose \u2192 recurse \u2192 undo; prune impossible branches early',items:[
@@ -1550,6 +1716,25 @@ code:`def maxSubArray(nums):
 dry:{base:'nums=[5] \u2192 cur=ans=5 \u2192 5  |  all negative [-2,-1,-3] \u2192 ans=-1 (largest single element)',
 happy:'[-2,1,-3,4,-1,2,1,-5,4]\n cur=ans=-2\n 1:  cur=max(1,-2+1=-1)=1  ans=1\n -3: cur=max(-3,1-3=-2)=-2  ans=1\n 4:  cur=max(4,-2+4=2)=4   ans=4\n -1: cur=max(-1,4-1=3)=3   ans=4\n 2:  cur=max(2,3+2=5)=5    ans=5\n 1:  cur=max(1,5+1=6)=6    ans=6\n -5: cur=max(-5,6-5=1)=1   ans=6\n 4:  cur=max(4,1+4=5)=5    ans=6\n \u2192 6',
 fail:'Initialising cur=0 breaks on all-negative arrays \u2192 returns 0 (an empty subarray, usually not allowed). Init to nums[0] so at least one element is always included.'}},
+{n:'Minimum Path Sum',cx:'O(m·n)',trig:'"cheapest path from top-left to bottom-right, only right and down moves"',ex:'dp[i][j] = grid[i][j] + min(from above, from left)',key:'A cell is reachable only from above or from the left, so its best cost is its own value plus the cheaper of those two.',steps:['dp[0][0] = grid[0][0]','Seed row 0 as a running prefix sum (only left is reachable)','Seed col 0 the same way (only up is reachable)','For i,j from 1: dp[i][j] = grid[i][j] + min(dp[i−1][j], dp[i][j−1])','Answer is dp[m−1][n−1]'],trap:'Loop bounds: i ranges over rows (m), j over cols (n) — swapping them passes on square grids and silently reads the wrong cells on rectangular ones. Unique Paths is this recurrence with + instead of min.',bug:true,
+code:`def minPathSum(grid):
+    m, n = len(grid), len(grid[0])
+    dp = [[0] * n for _ in range(m)]
+    dp[0][0] = grid[0][0]
+
+    for j in range(1, n):
+        dp[0][j] = dp[0][j - 1] + grid[0][j]
+    for i in range(1, m):
+        dp[i][0] = dp[i - 1][0] + grid[i][0]
+
+    for i in range(1, m):
+        for j in range(1, n):
+            dp[i][j] = grid[i][j] + min(dp[i - 1][j], dp[i][j - 1])
+
+    return dp[m - 1][n - 1]`,
+dry:{base:'1x1 grid → both seed loops skipped → dp[0][0] = grid[0][0]   |   single row → pure prefix sum',
+happy:'grid = [[1,3,1],\n        [1,5,1],\n        [4,2,1]]\n seed row 0 → 1, 4, 5\n seed col 0 → 1, 2, 6\n dp[1][1] = 5 + min(up 4, left 2) = 7\n dp[1][2] = 1 + min(up 5, left 7) = 6\n dp[2][1] = 2 + min(up 7, left 6) = 8\n dp[2][2] = 1 + min(up 6, left 8) = 7\n → 7   via 1 → 3 → 1 → 1 → 1',
+fail:'Two real bugs to watch. (1) for i in range(n) / for j in range(m) swaps the bounds — fine on a square grid, IndexError or wrong cells otherwise. (2) starting the fill loops at 0 reads dp[−1][j], which in Python wraps to the LAST row instead of raising — a silently wrong answer.'}},
 ]});
 DATA.push({id:'bits',name:'Bit Manipulation',tpl:'x & (x\u22121) drops the lowest set bit \u00b7 XOR cancels pairs \u00b7 mask 32 bits',items:[
 {n:'Number of 1 Bits',cx:'O(k) k = set bits',trig:'"count set bits", "Hamming weight"',ex:'11 = 1011 \u2192 3 set bits',key:'x & (x\u22121) clears the lowest set bit; loop until 0.',steps:['count=0','While n: n = n & (n\u22121); count++','Return count'],trap:'n & (n\u22121) is a single-op skip \u2014 don\u2019t bit-shift 32 times unless you must.',
@@ -1605,6 +1790,25 @@ code:`def getSum(a, b):
 dry:{base:'a=0, b=5 \u2192 no carry, first iter a=5 b=0 \u2192 return 5  |  a=5 b=0 \u2192 loop skipped \u2192 5',
 happy:'a=2 (10), b=3 (11)\n iter 1: carry=(10 & 11)<<1 = 10<<1 = 100 (4);  a = 10 XOR 11 = 01 (1)   b=4\n iter 2: carry=(01 & 100)<<1 = 0;              a = 01 XOR 100 = 101 (5)  b=0\n loop exit \u2192 5',
 fail:'No 32-bit mask in Python \u2192 negatives loop forever because Python\u2019s ints are unbounded and the "carry" keeps propagating leftward. Mask keeps arithmetic in 32-bit two\u2019s complement.'}},
+{n:'Is x a Power of y',cx:'O(log x) by division, O(1) by logs',trig:'"is x an exact power of y", power of two / power of three variants',ex:'x=8 y=2 → log(8)/log(2) = 3.0, an integer → true',key:'log(x)/log(y) is a whole number exactly when x is a power of y — but float equality on logs is fragile, so the divide-down loop is the answer you defend.',steps:['Log form: r = log(x)/log(y); return r == floor(r)','Safe form: while x % y == 0: x //= y; then return x == 1','Guard x < 1 and y <= 1 up front or the loop never ends','Power of two shortcut: x > 0 and x & (x−1) == 0'],trap:'log(243)/log(3) can land on 4.999999999999999 and floor to 4. Prefer integer division, or round then verify y ** r == x.',
+code:`import math
+
+def isPowerLog(x, y):
+    r = math.log(x) / math.log(y)
+    return r == math.floor(r)
+
+def isPower(x, y):
+    if x < 1 or y <= 1:
+        return x == 1
+    while x % y == 0:
+        x //= y
+    return x == 1
+
+def isPowerOfTwo(x):
+    return x > 0 and x & (x - 1) == 0`,
+dry:{base:'x=1 → 1 % y != 0 so the loop never runs → 1 == 1 → True, which is right (y**0)   |   y=1 → guarded, otherwise 1 divides forever',
+happy:'isPower(81, 3)\n 81 % 3 == 0 → x = 27\n 27 % 3 == 0 → x = 9\n  9 % 3 == 0 → x = 3\n  3 % 3 == 0 → x = 1\n  1 % 3 != 0 → stop\n x == 1 → True\n\nisPower(80, 3)\n 80 % 3 != 0 → loop never runs → 80 != 1 → False',
+fail:'isPowerLog(243, 3) returns False on some platforms — the quotient is 4.999999999999999 and floor gives 4. The division loop has no such failure mode, which is why it is the one to write on the board.'}},
 ]});
 
 DATA.push({id:'design',name:'Design & Sorting',tpl:'know the invariants \u00b7 O(1) common ops via clever storage',items:[
@@ -1798,6 +2002,28 @@ code:`def bubbleSort(arr):
 dry:{base:'[] or [x] \u2192 nothing swaps \u2192 same',
 happy:'[3,1,2]\n i=0: j=0 3>1 swap \u2192 [1,3,2]; j=1 3>2 swap \u2192 [1,2,3] swapped=True\n i=1: j=0 1>2? no; no swaps this pass\n early exit \u2192 [1,2,3]',
 fail:'Skipping the "already sorted" early exit still works but wastes O(n) passes on already-sorted input. The `swapped` flag makes best-case O(n).'}},
+{n:'Reverse Pairs',cx:'O(n log n)',trig:'"count pairs i < j where nums[i] > 2 * nums[j]"',ex:'[1,3,2,3,1] → the two 3s each beat the trailing 1 → 2',key:'Merge sort counts across the split: once both halves are sorted, a single two-pointer sweep counts every qualifying pair in linear time instead of n² comparisons.',steps:['mergeSort(l, r): if r − l <= 1 return 0','count = mergeSort(l, mid) + mergeSort(mid, r)','Both halves are now sorted — set j = mid','For each i in [l, mid): advance j while nums[i] > 2 * nums[j]','count += j − mid, then sort the span before returning'],trap:'j starts at mid and is declared OUTSIDE the i loop — resetting it per i drops the sweep back to O(n²), and starting it at 0 makes (j − mid) negative. Count before merging, while the halves are still separately sorted.',bug:true,
+code:`def reversePairs(nums):
+    def mergeSort(left, right):
+        if right - left <= 1:
+            return 0
+
+        mid = (left + right) // 2
+        count = mergeSort(left, mid) + mergeSort(mid, right)
+
+        j = mid
+        for i in range(left, mid):
+            while j < right and nums[i] > 2 * nums[j]:
+                j += 1
+            count += j - mid
+
+        nums[left:right] = sorted(nums[left:right])
+        return count
+
+    return mergeSort(0, len(nums))`,
+dry:{base:'nums=[] or [x] → right − left <= 1 → 0',
+happy:'nums = [1,3,2,3,1]   count pairs where a > 2b\n mergeSort(0,5) mid=2  → left [1,3] | right [2,3,1]\n\n left  mergeSort(0,2): [1] | [3]\n   i val 1: 1 > 2*3 ? no → +0    span sorted → [1,3]\n right mergeSort(2,5) mid=3: [2] | [3,1]\n   mergeSort(3,5): [3] | [1]\n     i val 3: 3 > 2*1 ✓ j runs off the end → +1   span sorted → [1,3]\n   sweep [2] | [1,3]\n     i val 2: 2 > 2*1 ? no → +0    span sorted → [1,2,3]\n   subtotal 1\n\n top sweep: left [1,3] | right [1,2,3], j starts at mid\n   i val 1: 1 > 2*1 ? no  → j stays → +0\n   i val 3: 3 > 2*1 ✓ j++ ; 3 > 2*2 ? no → +1\n total = 0 + 1 + 1 = 2',
+fail:'Two bugs the draft version hits: the base case returns None (not 0), so count += mergeSort(...) raises TypeError; and j = 0 instead of j = mid makes j − mid negative, quietly subtracting from the count.'}},
 ]});
 
 const STAR=new Set(['Two Sum','3Sum','Longest Substring w/o Repeat','Minimum Window Substring','Number of Islands','Course Schedule','Validate BST','Binary Tree Max Path Sum','Coin Change','Longest Common Subsequence','Merge Intervals','Clone Graph','Serialize / Deserialize','Kadane \u2014 Max Subarray','Word Break','Longest Increasing Subsequence','LRU / Trie','Word Search II','Insert Interval','Meeting Rooms II (min rooms)','Set Matrix Zeroes','Alien Dictionary']);
