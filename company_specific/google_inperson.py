@@ -270,6 +270,7 @@ def d1_logger_rate_limiter(messages):
     return result
 
 
+import time
 def d2_rate_limiter_multi_strategy():
     """
     D2. In-Memory Rate Limiter (multi-strategy)
@@ -282,14 +283,108 @@ def d2_rate_limiter_multi_strategy():
     Follow-ups: Distributed version (Redis, clock skew); burst handling; cleanup.
     """
 
+    def fixed_window(state, limit, window):
+        now = time.time()
 
-def d3_logger_message_printer():
+        if now - state['start'] >= window:
+            state['start'] = now
+            state['count'] = 0
+
+        if state['count'] < limit:
+            state['count'] += 1
+            return True
+
+        return False
+
+    def sliding_window_ratelimit(state, limit, window):
+        now = time.time()
+
+        while state['start'] and (now - state['start'][0]) >= window:
+            state['start'].popleft()
+
+        if len(state['start']) <= limit:
+            state['start'].append(now)
+            return True
+
+        return False
+
+    def token_bucket_ratelimit(state, capacity, refill_rate):
+        now = time.time()
+        elapsed = now - state['last_time']
+
+        state['tokens'] = min(
+            capacity,
+            state['tokens'] + elapsed * refill_rate
+        )
+
+        state['last_time'] = now
+
+        if state['tokens'] >= 1:
+            state['tokens'] -= 1
+            return True
+
+        return False
+
+
+    fixed_state = {"start": time.time(), "count": 0}
+
+    print(fixed_window(fixed_state, 3, 10))
+    print(fixed_window(fixed_state, 3, 10))
+    print(fixed_window(fixed_state, 3, 10))
+    print(fixed_window(fixed_state, 3, 10))
+
+
+    from collections import deque
+    sliding_state = {"start": deque()}
+
+    print(sliding_window_ratelimit(sliding_state, 3, 10))
+    print(sliding_window_ratelimit(sliding_state, 3, 10))
+    print(sliding_window_ratelimit(sliding_state, 3, 10))
+    print(sliding_window_ratelimit(sliding_state, 3, 10))
+
+
+    token_state = {
+        "tokens": 3,
+        "last_time": time.time()
+    }
+
+    print(token_bucket_ratelimit(token_state, 3, 1))
+    print(token_bucket_ratelimit(token_state, 3, 1))
+    print(token_bucket_ratelimit(token_state, 3, 1))
+    print(token_bucket_ratelimit(token_state, 3, 1))
+
+
+# print(d2_rate_limiter_multi_strategy())
+
+
+
+def d3_logger_message_printer(events):
     """
     D3. Logger Message Printer (variant of D1)
     Pattern: Design + hash map
     Problem: Each unique message prints at most once per 10s window (printed at t
       -> blocked until t+10). Essentially D1 with explicit "print" semantics.
     """
+
+    next_allowed = {}
+    const_time = 10
+
+    def should_print(timestamp, message) -> bool:
+        if timestamp >= next_allowed.get(message, 0):
+            next_allowed[message] = timestamp + const_time
+            return True
+        return False
+
+    for timestamp, message in events:
+        if should_print(timestamp, message):
+            print(f"TIMESTAMP :: {timestamp} :: MESSAGE :: {message}")
+        else:
+            print(f"TIMESTAMP :: {timestamp} :: MESSAGE BLOCKED:: {message} :: ALLOWED AFTER :: {next_allowed.get(message)}")
+
+
+events = [(1, "foo"), (2, "bar"), (3, "foo"), (4, "bar"), (5, "cat"), (11, "foo"), (17, "foo")]
+print(d3_logger_message_printer(events))
+
 
 
 def d4_rotated_squares_stream():
